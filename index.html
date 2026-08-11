@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>CQR - Lector QR</title>
+
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .contenedor {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+    }
+
+    h1 {
+      margin-bottom: 5px;
+    }
+
+    .subtitulo {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    #reader {
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .contador {
+      font-size: 42px;
+      font-weight: bold;
+      color: #1769c2;
+      margin-top: 20px;
+    }
+
+    .resultado {
+      margin-top: 15px;
+      padding: 12px;
+      background: #e8f5e9;
+      border-radius: 8px;
+      word-break: break-all;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 6px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    #btnIniciar {
+      background: #1769c2;
+      color: white;
+    }
+
+    #btnDetener {
+      background: #b71c1c;
+      color: white;
+    }
+
+    #btnDetener:disabled {
+      background: #ccc;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="contenedor">
+
+    <h1>CQR</h1>
+
+    <div class="subtitulo">
+      Sistema de Control de Asistencia QR
+    </div>
+
+    <button id="btnIniciar">
+      Iniciar Cámara
+    </button>
+
+    <button id="btnDetener" disabled>
+      Detener Cámara
+    </button>
+
+    <div id="reader"></div>
+
+    <div class="contador" id="contador">
+      0
+    </div>
+
+    <div>
+      Escaneados
+    </div>
+
+    <div class="resultado" id="resultado">
+      Esperando QR...
+    </div>
+
+  </div>
+
+<script>
+
+let scanner = null;
+let escaneados = [];
+
+document.getElementById("btnIniciar").addEventListener("click", iniciarCamara);
+
+document.getElementById("btnDetener").addEventListener("click", detenerCamara);
+
+
+function iniciarCamara() {
+
+  if (scanner) {
+    return;
+  }
+
+  scanner = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras()
+
+    .then(function(cameras) {
+
+      if (!cameras || cameras.length === 0) {
+        throw new Error("No se encontró ninguna cámara.");
+      }
+
+      const cameraId = cameras[0].id;
+
+      scanner.start(
+        cameraId,
+
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          }
+        },
+
+        function(decodedText) {
+
+          console.log("QR leído:", decodedText);
+
+          escaneados.push(decodedText);
+
+          document.getElementById("contador").textContent =
+            escaneados.length;
+
+          document.getElementById("resultado").textContent =
+            "QR leído: " + decodedText;
+
+        },
+
+        function(errorMessage) {
+
+          // Errores normales de búsqueda del QR.
+          // No mostramos mensajes para no molestar.
+
+        }
+
+      )
+
+      .then(function() {
+
+        document.getElementById("btnIniciar").disabled = true;
+        document.getElementById("btnDetener").disabled = false;
+
+      })
+
+      .catch(function(error) {
+
+        alert("No se pudo iniciar la cámara: " + error);
+
+        scanner = null;
+
+      });
+
+    })
+
+    .catch(function(error) {
+
+      alert("No se pudo acceder a la cámara: " + error);
+
+      scanner = null;
+
+    });
+
+}
+
+
+function detenerCamara() {
+
+  if (!scanner) {
+    return;
+  }
+
+  scanner.stop()
+
+    .then(function() {
+
+      scanner.clear();
+
+      scanner = null;
+
+      document.getElementById("btnIniciar").disabled = false;
+      document.getElementById("btnDetener").disabled = true;
+
+    })
+
+    .catch(function(error) {
+
+      console.log("Error al detener cámara:", error);
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
