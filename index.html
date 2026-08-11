@@ -204,6 +204,50 @@ function iniciarCamara() {
 
 }
 
+  function(decodedText, decodedResult) {
+
+  console.log("QR leído:", decodedText);
+
+  // Extraer el código QR de la URL
+  let codigoQR = decodedText;
+
+  try {
+
+    const url = new URL(decodedText);
+
+    const qrParametro = url.searchParams.get("qr");
+
+    if (qrParametro) {
+      codigoQR = qrParametro;
+    }
+
+  } catch (error) {
+
+    // Si no es una URL, utilizamos directamente el contenido leído
+
+    codigoQR = decodedText;
+
+  }
+
+
+  document.getElementById("resultado").textContent =
+    "Procesando: " + codigoQR;
+
+
+  // Evitar enviar el mismo QR varias veces
+  if (escaneados.includes(codigoQR)) {
+
+    document.getElementById("resultado").textContent =
+      "⚠️ QR ya escaneado: " + codigoQR;
+
+    return;
+  }
+
+
+  // Enviar QR a Apps Script
+  enviarAsistencia(codigoQR);
+
+}
 
 function detenerCamara() {
 
@@ -231,7 +275,64 @@ function detenerCamara() {
     });
 
 }
+function enviarAsistencia(codigoQR) {
 
+  const url =
+    "https://script.google.com/macros/s/AKfycbwiLmQln5bmPFkP6l3c4Hf32KLSi65UIp-ipwnOPguwU6tSygIImzHtL1syck2q0yJrFw/exec"
+    + "?action=registrarAsistencia"
+    + "&qr=" + encodeURIComponent(codigoQR)
+    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
+    + "&callback=respuestaAsistencia";
+
+  const script = document.createElement("script");
+
+  script.src = url;
+
+  document.body.appendChild(script);
+}
+
+
+function respuestaAsistencia(resultado) {
+
+  console.log("Respuesta Apps Script:", resultado);
+
+
+  if (resultado.ok) {
+
+    escaneados.push(
+      resultado.qr || resultado.codigoQR || ""
+    );
+
+    document.getElementById("contador").textContent =
+      escaneados.length;
+
+
+    document.getElementById("resultado").innerHTML =
+      "✅ <strong>Asistencia registrada</strong><br>" +
+      resultado.nombre + " " +
+      resultado.apellido + "<br>" +
+      "Decanato: " + resultado.decanato;
+
+  }
+
+  else if (resultado.duplicado) {
+
+    document.getElementById("resultado").innerHTML =
+      "⚠️ <strong>Asistencia ya registrada</strong><br>" +
+      resultado.nombre + " " +
+      resultado.apellido;
+
+  }
+
+  else {
+
+    document.getElementById("resultado").innerHTML =
+      "❌ <strong>Error</strong><br>" +
+      (resultado.error || resultado.mensaje || "No se pudo registrar.");
+
+  }
+
+}
 </script>
 
 </body>
