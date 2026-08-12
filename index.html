@@ -168,7 +168,7 @@ qrbox: function(viewfinderWidth, viewfinderHeight) {
 }
         },
 
-     function(decodedText) {
+function(decodedText) {
 
   console.log("QR leído:", decodedText);
 
@@ -190,50 +190,12 @@ qrbox: function(viewfinderWidth, viewfinderHeight) {
 
   }
 
-  // Mostrar inmediatamente el código leído
   document.getElementById("resultado").textContent =
     "QR leído: " + codigoQR;
 
+  enviarAsistencia(codigoQR);
 
-  // Detener la cámara para evitar lecturas repetidas
-  if (scanner) {
-
-    scanner.stop()
-
-      .then(function() {
-
-        scanner.clear();
-
-        scanner = null;
-
-        document.getElementById("btnIniciar").disabled = false;
-        document.getElementById("btnDetener").disabled = true;
-
-        // Enviar solamente UNA vez
-        enviarAsistencia(codigoQR);
-
-      })
-
-      .catch(function(error) {
-
-        console.log(
-          "Error al detener cámara:",
-          error
-        );
-
-        // Aunque falle al detener, enviamos una sola vez
-        enviarAsistencia(codigoQR);
-
-      });
-
-  } else {
-
-    enviarAsistencia(codigoQR);
-
-  }
-
-},  
-
+},
         function(errorMessage) {
 
           // Errores normales de búsqueda del QR.
