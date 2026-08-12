@@ -168,19 +168,34 @@ qrbox: function(viewfinderWidth, viewfinderHeight) {
 }
         },
 
-        function(decodedText) {
+       function(decodedText) {
 
-          console.log("QR leído:", decodedText);
+  console.log("QR leído:", decodedText);
 
-          escaneados.push(decodedText);
+  let codigoQR = decodedText;
 
-          document.getElementById("contador").textContent =
-            escaneados.length;
+  try {
 
-          document.getElementById("resultado").textContent =
-            "QR leído: " + decodedText;
+    const url = new URL(decodedText);
 
-        },
+    const qrParametro = url.searchParams.get("qr");
+
+    if (qrParametro) {
+      codigoQR = qrParametro;
+    }
+
+  } catch (error) {
+
+    codigoQR = decodedText;
+
+  }
+
+  document.getElementById("resultado").textContent =
+    "QR leído: " + codigoQR;
+
+  enviarAsistencia(codigoQR);
+
+},
 
         function(errorMessage) {
 
@@ -241,6 +256,37 @@ function detenerCamara() {
     .catch(function(error) {
 
       console.log("Error al detener cámara:", error);
+
+    });
+
+}
+
+  function enviarAsistencia(codigoQR) {
+
+  const url =
+    "https://script.google.com/macros/s/AKfycbxkroqQ0TfxHWItD4RHXEDPuWbOli_3GGWt401VL0cObrD9jeNkx3yAcGy7wSadahvdpQ/exec"
+    + "?action=registrarAsistencia"
+    + "&qr=" + encodeURIComponent(codigoQR)
+    + "&dispositivo=" + encodeURIComponent("CQR Scanner");
+
+  fetch(url)
+    .then(function(response) {
+      return response.text();
+    })
+    .then(function(data) {
+
+      console.log("Respuesta Apps Script:", data);
+
+      document.getElementById("resultado").textContent =
+        "Respuesta: " + data;
+
+    })
+    .catch(function(error) {
+
+      console.error(error);
+
+      document.getElementById("resultado").textContent =
+        "❌ Error al enviar: " + error;
 
     });
 
