@@ -148,11 +148,24 @@ function iniciarCamara() {
         cameraId,
 
         {
-          fps: 10,
-          qrbox: {
-            width: 250,
-            height: 250
-          }
+          fps: 15,
+qrbox: function(viewfinderWidth, viewfinderHeight) {
+
+  const minEdgeSize = Math.min(
+    viewfinderWidth,
+    viewfinderHeight
+  );
+
+  const qrboxSize = Math.floor(
+    minEdgeSize * 0.70
+  );
+
+  return {
+    width: qrboxSize,
+    height: qrboxSize
+  };
+
+}
         },
 
         function(decodedText) {
