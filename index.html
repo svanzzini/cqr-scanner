@@ -124,7 +124,6 @@ document.getElementById("btnIniciar").addEventListener("click", iniciarCamara);
 
 document.getElementById("btnDetener").addEventListener("click", detenerCamara);
 
-
 function iniciarCamara() {
 
   if (scanner) {
@@ -143,16 +142,87 @@ function iniciarCamara() {
 
       const cameraId = cameras[0].id;
 
+      const qrboxFunction = function(viewfinderWidth, viewfinderHeight) {
+
+        const minEdgeSize = Math.min(
+          viewfinderWidth,
+          viewfinderHeight
+        );
+
+        const qrboxSize = Math.floor(minEdgeSize * 0.70);
+
+        return {
+          width: qrboxSize,
+          height: qrboxSize
+        };
+      };
+
       scanner.start(
+
         cameraId,
 
         {
-          fps: 10,
-          qrbox: {
-            width: 250,
-            height: 250
+          fps: 15,
+
+          qrbox: qrboxFunction,
+
+          aspectRatio: 1.777778,
+
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.QR_CODE
+          ],
+
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
           }
         },
+
+        function(decodedText, decodedResult) {
+
+          console.log("QR leído:", decodedText);
+
+          escaneados.push(decodedText);
+
+          document.getElementById("contador").textContent =
+            escaneados.length;
+
+          document.getElementById("resultado").textContent =
+            "QR leído: " + decodedText;
+
+        },
+
+        function(errorMessage) {
+          // Ignorar errores normales
+        }
+
+      )
+
+      .then(function() {
+
+        document.getElementById("btnIniciar").disabled = true;
+        document.getElementById("btnDetener").disabled = false;
+
+      })
+
+      .catch(function(error) {
+
+        alert("No se pudo iniciar la cámara: " + error);
+
+        scanner = null;
+
+      });
+
+    })
+
+    .catch(function(error) {
+
+      alert("No se pudo acceder a la cámara: " + error);
+
+      scanner = null;
+
+    });
+
+}
 
         function(decodedText) {
 
