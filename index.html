@@ -181,18 +181,49 @@ function iniciarCamara() {
 
           console.log("QR leído:", decodedText);
 
-          escaneados.push(decodedText);
+          // Extraer el código del QR
+          let codigoQR = decodedText;
 
-          document.getElementById("contador").textContent =
-            escaneados.length;
+          try {
+
+            const url = new URL(decodedText);
+
+            const qrParametro =
+              url.searchParams.get("qr");
+
+            if (qrParametro) {
+              codigoQR = qrParametro;
+            }
+
+          } catch (error) {
+
+            codigoQR = decodedText;
+
+          }
+
 
           document.getElementById("resultado").textContent =
-            "QR leído: " + decodedText;
+            "Procesando: " + codigoQR;
+
+
+          // Evitar enviar dos veces el mismo QR
+          if (escaneados.includes(codigoQR)) {
+
+            document.getElementById("resultado").textContent =
+              "⚠️ QR ya registrado: " + codigoQR;
+
+            return;
+          }
+
+
+          enviarAsistencia(codigoQR);
 
         },
 
         function(errorMessage) {
-          // Ignorar errores normales
+
+          // Ignorar errores normales de búsqueda del QR
+
         }
 
       )
@@ -200,13 +231,16 @@ function iniciarCamara() {
       .then(function() {
 
         document.getElementById("btnIniciar").disabled = true;
+
         document.getElementById("btnDetener").disabled = false;
 
       })
 
       .catch(function(error) {
 
-        alert("No se pudo iniciar la cámara: " + error);
+        alert(
+          "No se pudo iniciar la cámara: " + error
+        );
 
         scanner = null;
 
@@ -216,7 +250,9 @@ function iniciarCamara() {
 
     .catch(function(error) {
 
-      alert("No se pudo acceder a la cámara: " + error);
+      alert(
+        "No se pudo acceder a la cámara: " + error
+      );
 
       scanner = null;
 
@@ -224,100 +260,6 @@ function iniciarCamara() {
 
 }
 
-        function(decodedText) {
-
-          console.log("QR leído:", decodedText);
-
-          escaneados.push(decodedText);
-
-          document.getElementById("contador").textContent =
-            escaneados.length;
-
-          document.getElementById("resultado").textContent =
-            "QR leído: " + decodedText;
-
-        },
-
-        function(errorMessage) {
-
-          // Errores normales de búsqueda del QR.
-          // No mostramos mensajes para no molestar.
-
-        }
-
-      )
-
-      .then(function() {
-
-        document.getElementById("btnIniciar").disabled = true;
-        document.getElementById("btnDetener").disabled = false;
-
-      })
-
-      .catch(function(error) {
-
-        alert("No se pudo iniciar la cámara: " + error);
-
-        scanner = null;
-
-      });
-
-    })
-
-    .catch(function(error) {
-
-      alert("No se pudo acceder a la cámara: " + error);
-
-      scanner = null;
-
-    });
-
-}
-
-  function(decodedText, decodedResult) {
-
-  console.log("QR leído:", decodedText);
-
-  // Extraer el código QR de la URL
-  let codigoQR = decodedText;
-
-  try {
-
-    const url = new URL(decodedText);
-
-    const qrParametro = url.searchParams.get("qr");
-
-    if (qrParametro) {
-      codigoQR = qrParametro;
-    }
-
-  } catch (error) {
-
-    // Si no es una URL, utilizamos directamente el contenido leído
-
-    codigoQR = decodedText;
-
-  }
-
-
-  document.getElementById("resultado").textContent =
-    "Procesando: " + codigoQR;
-
-
-  // Evitar enviar el mismo QR varias veces
-  if (escaneados.includes(codigoQR)) {
-
-    document.getElementById("resultado").textContent =
-      "⚠️ QR ya escaneado: " + codigoQR;
-
-    return;
-  }
-
-
-  // Enviar QR a Apps Script
-  enviarAsistencia(codigoQR);
-
-}
 
 function detenerCamara() {
 
@@ -334,17 +276,23 @@ function detenerCamara() {
       scanner = null;
 
       document.getElementById("btnIniciar").disabled = false;
+
       document.getElementById("btnDetener").disabled = true;
 
     })
 
     .catch(function(error) {
 
-      console.log("Error al detener cámara:", error);
+      console.log(
+        "Error al detener cámara:",
+        error
+      );
 
     });
 
 }
+
+
 function enviarAsistencia(codigoQR) {
 
   const url =
@@ -354,24 +302,43 @@ function enviarAsistencia(codigoQR) {
     + "&dispositivo=" + encodeURIComponent("CQR Scanner")
     + "&callback=respuestaAsistencia";
 
-  const script = document.createElement("script");
+
+  const script =
+    document.createElement("script");
 
   script.src = url;
 
   document.body.appendChild(script);
+
 }
 
 
 function respuestaAsistencia(resultado) {
 
-  console.log("Respuesta Apps Script:", resultado);
+  console.log(
+    "Respuesta Apps Script:",
+    resultado
+  );
 
 
   if (resultado.ok) {
 
-    escaneados.push(
-      resultado.qr || resultado.codigoQR || ""
-    );
+    // Ahora sí agregamos el QR al contador,
+    // porque Apps Script confirmó el registro.
+
+    const codigoRegistrado =
+      resultado.codigoQR ||
+      resultado.qr ||
+      "";
+
+    if (
+      codigoRegistrado &&
+      !escaneados.includes(codigoRegistrado)
+    ) {
+
+      escaneados.push(codigoRegistrado);
+
+    }
 
     document.getElementById("contador").textContent =
       escaneados.length;
@@ -381,7 +348,8 @@ function respuestaAsistencia(resultado) {
       "✅ <strong>Asistencia registrada</strong><br>" +
       resultado.nombre + " " +
       resultado.apellido + "<br>" +
-      "Decanato: " + resultado.decanato;
+      "Decanato: " +
+      resultado.decanato;
 
   }
 
@@ -398,12 +366,12 @@ function respuestaAsistencia(resultado) {
 
     document.getElementById("resultado").innerHTML =
       "❌ <strong>Error</strong><br>" +
-      (resultado.error || resultado.mensaje || "No se pudo registrar.");
+      (
+        resultado.error ||
+        resultado.mensaje ||
+        "No se pudo registrar."
+      );
 
   }
 
 }
-</script>
-
-</body>
-</html>
