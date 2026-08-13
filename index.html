@@ -284,43 +284,32 @@ function detenerCamara() {
 
   document.body.appendChild(script);
 }
-  function respuestaAsistencia(resultado) {
 
-  console.log("Respuesta Apps Script:", resultado);
+  function enviarAsistencia(codigoQR) {
 
-  if (resultado.ok) {
+  const url =
+    "https://script.google.com/macros/s/AKfycbwXF83VHa2fHMwGl-ZBpQVu3IAnSyocDP9wE-uBkbDdCDYMBM0Eksvz7mNmCUKKxaEvtA/exec"
+    + "?action=registrarAsistencia"
+    + "&qr=" + encodeURIComponent(codigoQR)
+    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
+    + "&callback=respuestaAsistencia";
 
-    document.getElementById("resultado").innerHTML =
-      "✅ <strong>Asistencia registrada</strong><br>" +
-      resultado.nombre + " " +
-      resultado.apellido + "<br>" +
-      "Decanato: " +
-      resultado.decanato;
+  console.log("Enviando QR:", codigoQR);
 
-  }
+  const script = document.createElement("script");
 
-  else if (resultado.duplicado) {
+  script.src = url;
 
-    document.getElementById("resultado").innerHTML =
-      "⚠️ <strong>Asistencia ya registrada</strong><br>" +
-      resultado.nombre + " " +
-      resultado.apellido;
-
-  }
-
-  else {
+  script.onerror = function() {
 
     document.getElementById("resultado").innerHTML =
-      "❌ <strong>Error</strong><br>" +
-      (
-        resultado.error ||
-        resultado.mensaje ||
-        "No se pudo registrar."
-      );
+      "❌ No se pudo conectar con Apps Script.";
 
-  }
+  };
+
+  document.body.appendChild(script);
 }
-</script>
+  </script>
 
 </body>
 </html>
