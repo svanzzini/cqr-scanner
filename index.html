@@ -266,31 +266,60 @@ function detenerCamara() {
     "https://script.google.com/macros/s/AKfycbxkroqQ0TfxHWItD4RHXEDPuWbOli_3GGWt401VL0cObrD9jeNkx3yAcGy7wSadahvdpQ/exec"
     + "?action=registrarAsistencia"
     + "&qr=" + encodeURIComponent(codigoQR)
-    + "&dispositivo=" + encodeURIComponent("CQR Scanner");
+    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
+    + "&callback=respuestaAsistencia";
 
-  fetch(url)
-    .then(function(response) {
-      return response.text();
-    })
-    .then(function(data) {
+  console.log("Enviando QR a Apps Script:", codigoQR);
 
-      console.log("Respuesta Apps Script:", data);
+  const script = document.createElement("script");
 
-      document.getElementById("resultado").textContent =
-        "Respuesta: " + data;
+  script.src = url;
 
-    })
-    .catch(function(error) {
+  script.onerror = function() {
 
-      console.error(error);
+    document.getElementById("resultado").textContent =
+      "❌ No se pudo conectar con Apps Script.";
 
-      document.getElementById("resultado").textContent =
-        "❌ Error al enviar: " + error;
+  };
 
-    });
-
+  document.body.appendChild(script);
 }
+  function respuestaAsistencia(resultado) {
 
+  console.log("Respuesta Apps Script:", resultado);
+
+  if (resultado.ok) {
+
+    document.getElementById("resultado").innerHTML =
+      "✅ <strong>Asistencia registrada</strong><br>" +
+      resultado.nombre + " " +
+      resultado.apellido + "<br>" +
+      "Decanato: " +
+      resultado.decanato;
+
+  }
+
+  else if (resultado.duplicado) {
+
+    document.getElementById("resultado").innerHTML =
+      "⚠️ <strong>Asistencia ya registrada</strong><br>" +
+      resultado.nombre + " " +
+      resultado.apellido;
+
+  }
+
+  else {
+
+    document.getElementById("resultado").innerHTML =
+      "❌ <strong>Error</strong><br>" +
+      (
+        resultado.error ||
+        resultado.mensaje ||
+        "No se pudo registrar."
+      );
+
+  }
+}
 </script>
 
 </body>
