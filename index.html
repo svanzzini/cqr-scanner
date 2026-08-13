@@ -263,32 +263,7 @@ function detenerCamara() {
   function enviarAsistencia(codigoQR) {
 
   const url =
-  "https://script.google.com/macros/s/AKfycbymGjNfkG3spXk_eUT-gGbpuPsvJXUSPBTvSKx3wN_AskNiU9J1Bi_DAqtrQ3TImqOjTQ/exec"
-    + "?action=registrarAsistencia"
-    + "&qr=" + encodeURIComponent(codigoQR)
-    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
-    + "&callback=respuestaAsistencia";
-
-  console.log("Enviando QR a Apps Script:", codigoQR);
-
-  const script = document.createElement("script");
-
-  script.src = url;
-
-  script.onerror = function() {
-
-    document.getElementById("resultado").textContent =
-      "❌ No se pudo conectar con Apps Script.";
-
-  };
-
-  document.body.appendChild(script);
-}
-
-  function enviarAsistencia(codigoQR) {
-
-  const url =
-    "https://script.google.com/macros/s/AKfycbwXF83VHa2fHMwGl-ZBpQVu3IAnSyocDP9wE-uBkbDdCDYMBM0Eksvz7mNmCUKKxaEvtA/exec"
+    "https://script.google.com/macros/s/AKfycbymGjNfkG3spXk_eUT-gGbpuPsvJXUSPBTvSKx3wN_AskNiU9J1Bi_DAqtrQ3TImqOjTQ/exec"
     + "?action=registrarAsistencia"
     + "&qr=" + encodeURIComponent(codigoQR)
     + "&dispositivo=" + encodeURIComponent("CQR Scanner")
@@ -309,7 +284,49 @@ function detenerCamara() {
 
   document.body.appendChild(script);
 }
-  </script>
+
+  function respuestaAsistencia(resultado) {
+
+  console.log(
+    "Respuesta Apps Script:",
+    resultado
+  );
+
+
+  if (resultado.ok) {
+
+    document.getElementById("resultado").innerHTML =
+      "✅ <strong>Asistencia registrada</strong><br>" +
+      resultado.nombre + " " +
+      resultado.apellido + "<br>" +
+      "Decanato: " +
+      resultado.decanato;
+
+  }
+
+  else if (resultado.duplicado) {
+
+    document.getElementById("resultado").innerHTML =
+      "⚠️ <strong>Asistencia ya registrada</strong><br>" +
+      resultado.nombre + " " +
+      resultado.apellido;
+
+  }
+
+  else {
+
+    document.getElementById("resultado").innerHTML =
+      "❌ <strong>Error</strong><br>" +
+      (
+        resultado.error ||
+        resultado.mensaje ||
+        "No se pudo registrar."
+      );
+
+  }
+
+}
+    </script>
 
 </body>
 </html>
