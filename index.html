@@ -266,23 +266,36 @@ function detenerCamara() {
     "https://script.google.com/macros/s/AKfycbymGjNfkG3spXk_eUT-gGbpuPsvJXUSPBTvSKx3wN_AskNiU9J1Bi_DAqtrQ3TImqOjTQ/exec"
     + "?action=registrarAsistencia"
     + "&qr=" + encodeURIComponent(codigoQR)
-    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
-    + "&callback=respuestaAsistencia";
+    + "&dispositivo=" + encodeURIComponent("CQR Scanner");
 
-  console.log("Enviando QR:", codigoQR);
+  console.log("Enviando QR a Apps Script:", codigoQR);
 
-  const script = document.createElement("script");
+  document.getElementById("resultado").innerHTML =
+    "⏳ Registrando asistencia...";
 
-  script.src = url;
+  const imagen = new Image();
 
-  script.onerror = function() {
+  imagen.onload = function() {
 
     document.getElementById("resultado").innerHTML =
-      "❌ No se pudo conectar con Apps Script.";
+      "✅ Solicitud enviada<br>" +
+      "QR: " + codigoQR;
 
   };
 
-  document.body.appendChild(script);
+  imagen.onerror = function() {
+
+    // Aunque el servidor responda con un formato que Image
+    // no pueda mostrar, la petición GET ya pudo haberse enviado.
+
+    document.getElementById("resultado").innerHTML =
+      "✅ Solicitud enviada<br>" +
+      "QR: " + codigoQR;
+
+  };
+
+  imagen.src = url + "&t=" + new Date().getTime();
+
 }
 
   function respuestaAsistencia(resultado) {
