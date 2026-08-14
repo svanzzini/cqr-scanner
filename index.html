@@ -259,52 +259,27 @@ function detenerCamara() {
     });
 
 }
-
-  function enviarAsistencia(codigoQR) {
+function enviarAsistencia(codigoQR) {
 
   const url =
     "https://script.google.com/macros/s/AKfycbymGjNfkG3spXk_eUT-gGbpuPsvJXUSPBTvSKx3wN_AskNiU9J1Bi_DAqtrQ3TImqOjTQ/exec"
     + "?action=registrarAsistencia"
     + "&qr=" + encodeURIComponent(codigoQR)
-    + "&dispositivo=" + encodeURIComponent("CQR Scanner");
+    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
+    + "&callback=respuestaAsistencia";
 
-  console.log("Enviando QR a Apps Script:", codigoQR);
+  console.log("Enviando:", codigoQR);
 
-  document.getElementById("resultado").innerHTML =
-    "⏳ Registrando asistencia...";
+  const script = document.createElement("script");
 
-  const imagen = new Image();
+  script.src = url;
 
-  imagen.onload = function() {
-
-    document.getElementById("resultado").innerHTML =
-      "✅ Solicitud enviada<br>" +
-      "QR: " + codigoQR;
-
-  };
-
-  imagen.onerror = function() {
-
-    // Aunque el servidor responda con un formato que Image
-    // no pueda mostrar, la petición GET ya pudo haberse enviado.
-
-    document.getElementById("resultado").innerHTML =
-      "✅ Solicitud enviada<br>" +
-      "QR: " + codigoQR;
-
-  };
-
-  imagen.src = url + "&t=" + new Date().getTime();
-
+  document.body.appendChild(script);
 }
+  
+function respuestaAsistencia(resultado) {
 
-  function respuestaAsistencia(resultado) {
-
-  console.log(
-    "Respuesta Apps Script:",
-    resultado
-  );
-
+  console.log("Respuesta Apps Script:", resultado);
 
   if (resultado.ok) {
 
@@ -337,9 +312,8 @@ function detenerCamara() {
       );
 
   }
-
 }
-    </script>
+</script>
 
 </body>
 </html>
