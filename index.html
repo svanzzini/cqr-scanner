@@ -145,88 +145,155 @@ function iniciarCamara() {
       const cameraId = cameras[0].id;
 
       scanner.start(
+
         cameraId,
 
         {
           fps: 15,
-qrbox: function(viewfinderWidth, viewfinderHeight) {
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
 
-  const minEdgeSize = Math.min(
-    viewfinderWidth,
-    viewfinderHeight
-  );
+            const minEdgeSize =
+              Math.min(
+                viewfinderWidth,
+                viewfinderHeight
+              );
 
-  const qrboxSize = Math.floor(
-    minEdgeSize * 0.70
-  );
+            const qrboxSize =
+              Math.floor(
+                minEdgeSize * 0.70
+              );
 
-  return {
-    width: qrboxSize,
-    height: qrboxSize
-  };
-
-}
+            return {
+              width: qrboxSize,
+              height: qrboxSize
+            };
+          }
         },
 
-function(decodedText) {
+        function(decodedText) {
 
-  // Evitar que el mismo QR se procese varias veces
-  if (scanner === null) {
-    return;
-  }
+          if (scanner === null) {
+            return;
+          }
 
-  console.log("QR leído:", decodedText);
+          console.log(
+            "QR leído:",
+            decodedText
+          );
 
-  let codigoQR = decodedText;
+          let codigoQR = decodedText;
 
-  try {
+          try {
 
-    const url = new URL(decodedText);
+            const url =
+              new URL(decodedText);
 
-    const qrParametro = url.searchParams.get("qr");
+            const qrParametro =
+              url.searchParams.get("qr");
 
-    if (qrParametro) {
-      codigoQR = qrParametro;
-    }
+            if (qrParametro) {
+              codigoQR = qrParametro;
+            }
 
-  } catch (error) {
+          } catch (error) {
 
-    codigoQR = decodedText;
+            codigoQR = decodedText;
 
-  }
+          }
 
-  // Detener inmediatamente el lector
-  const scannerActual = scanner;
-  scanner = null;
+          const scannerActual = scanner;
 
-  scannerActual.stop()
-    .then(function() {
+          scanner = null;
 
-      scannerActual.clear();
+          scannerActual.stop()
 
-      document.getElementById("btnIniciar").disabled = false;
-      document.getElementById("btnDetener").disabled = true;
+            .then(function() {
 
-      document.getElementById("resultado").textContent =
-        "⏳ Consultando asistencia...";
+              scannerActual.clear();
 
-      // Enviar UNA sola vez
-      enviarAsistencia(codigoQR);
+              document.getElementById(
+                "btnIniciar"
+              ).disabled = false;
+
+              document.getElementById(
+                "btnDetener"
+              ).disabled = true;
+
+              document.getElementById(
+                "resultado"
+              ).textContent =
+                "⏳ Consultando asistencia...";
+
+              enviarAsistencia(codigoQR);
+
+            })
+
+            .catch(function(error) {
+
+              console.log(
+                "Error al detener cámara:",
+                error
+              );
+
+              document.getElementById(
+                "resultado"
+              ).textContent =
+                "⏳ Consultando asistencia...";
+
+              enviarAsistencia(codigoQR);
+
+            });
+
+        },
+
+        function(errorMessage) {
+
+          // Errores normales mientras busca el QR.
+          // No mostramos mensajes.
+
+        }
+
+      )
+
+      .then(function() {
+
+        document.getElementById(
+          "btnIniciar"
+        ).disabled = true;
+
+        document.getElementById(
+          "btnDetener"
+        ).disabled = false;
+
+      })
+
+      .catch(function(error) {
+
+        alert(
+          "No se pudo iniciar la cámara: " +
+          error
+        );
+
+        scanner = null;
+
+      });
 
     })
+
     .catch(function(error) {
 
-      console.log("Error al detener cámara:", error);
+      alert(
+        "No se pudo acceder a la cámara: " +
+        error
+      );
 
-      document.getElementById("resultado").textContent =
-        "⏳ Consultando asistencia...";
-
-      enviarAsistencia(codigoQR);
+      scanner = null;
 
     });
 
-},
-function detenerCamara() {
+}
+  
+  function detenerCamara() {
 
   if (!scanner) {
     return;
