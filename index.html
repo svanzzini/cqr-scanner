@@ -260,7 +260,6 @@ function detenerCamara() {
 
 }
 
-
 function enviarAsistencia(codigoQR) {
 
   const url =
@@ -268,9 +267,14 @@ function enviarAsistencia(codigoQR) {
     + "?action=registrarAsistencia"
     + "&qr=" + encodeURIComponent(codigoQR)
     + "&dispositivo=" + encodeURIComponent("CQR Scanner")
-    + "&callback=respuestaAsistencia";
+    + "&callback=respuestaAsistencia"
+    + "&t=" + new Date().getTime();
 
   console.log("Enviando QR:", codigoQR);
+  console.log("URL:", url);
+
+  document.getElementById("resultado").textContent =
+    "⏳ Consultando asistencia...";
 
   const script = document.createElement("script");
 
@@ -278,9 +282,11 @@ function enviarAsistencia(codigoQR) {
 
   document.body.appendChild(script);
 }
-function respuestaAsistencia(resultado) {
 
-  console.log("Respuesta Apps Script:", resultado);
+
+window.respuestaAsistencia = function(resultado) {
+
+  console.log("RESPUESTA RECIBIDA:", resultado);
 
   if (resultado.ok) {
 
@@ -291,14 +297,20 @@ function respuestaAsistencia(resultado) {
       "Decanato: " +
       resultado.decanato;
 
-  } else if (resultado.duplicado) {
+  }
+
+  else if (resultado.duplicado) {
 
     document.getElementById("resultado").innerHTML =
       "⚠️ <strong>Asistencia ya registrada</strong><br>" +
       resultado.nombre + " " +
-      resultado.apellido;
+      resultado.apellido + "<br>" +
+      "Decanato: " +
+      resultado.decanato;
 
-  } else {
+  }
+
+  else {
 
     document.getElementById("resultado").innerHTML =
       "❌ <strong>Error</strong><br>" +
@@ -307,8 +319,11 @@ function respuestaAsistencia(resultado) {
         resultado.mensaje ||
         "No se pudo registrar."
       );
+
   }
-}  
+
+};
+
 </script>
 
 </body>
