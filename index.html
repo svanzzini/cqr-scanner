@@ -260,8 +260,7 @@ function enviarAsistencia(codigoQR) {
     + "?action=registrarAsistencia"
     + "&qr=" + encodeURIComponent(codigoQR)
     + "&dispositivo=" + encodeURIComponent("CQR Scanner")
-    + "&callback=respuestaAsistencia"
-    + "&t=" + new Date().getTime();
+    + "&callback=respuestaAsistencia";
 
   console.log("Enviando QR:", codigoQR);
   console.log("URL:", url);
@@ -281,41 +280,40 @@ window.respuestaAsistencia = function(resultado) {
 
   console.log("RESPUESTA RECIBIDA:", resultado);
 
+  const resultadoDiv =
+    document.getElementById("resultado");
+
   if (resultado.ok) {
 
-    document.getElementById("resultado").innerHTML =
+    resultadoDiv.innerHTML =
       "✅ <strong>Asistencia registrada</strong><br>" +
       resultado.nombre + " " +
       resultado.apellido + "<br>" +
       "Decanato: " +
       resultado.decanato;
 
-  }
+  } else if (resultado.duplicado) {
 
-  else if (resultado.duplicado) {
-
-    document.getElementById("resultado").innerHTML =
+    resultadoDiv.innerHTML =
       "⚠️ <strong>Asistencia ya registrada</strong><br>" +
       resultado.nombre + " " +
       resultado.apellido + "<br>" +
       "Decanato: " +
       resultado.decanato;
 
-  }
+  } else {
 
-  else {
-
-    document.getElementById("resultado").innerHTML =
+    resultadoDiv.innerHTML =
       "❌ <strong>Error</strong><br>" +
       (
         resultado.error ||
         resultado.mensaje ||
         "No se pudo registrar."
       );
-
   }
 
 };
+
 
 </script>
 
