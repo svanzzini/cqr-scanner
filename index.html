@@ -170,6 +170,11 @@ qrbox: function(viewfinderWidth, viewfinderHeight) {
 
 function(decodedText) {
 
+  // Evitar que el mismo QR se procese varias veces
+  if (scanner === null) {
+    return;
+  }
+
   console.log("QR leído:", decodedText);
 
   let codigoQR = decodedText;
@@ -190,49 +195,37 @@ function(decodedText) {
 
   }
 
-  document.getElementById("resultado").textContent =
-    "QR leído: " + codigoQR;
+  // Detener inmediatamente el lector
+  const scannerActual = scanner;
+  scanner = null;
 
-  enviarAsistencia(codigoQR);
+  scannerActual.stop()
+    .then(function() {
 
-},
-        function(errorMessage) {
+      scannerActual.clear();
 
-          // Errores normales de búsqueda del QR.
-          // No mostramos mensajes para no molestar.
+      document.getElementById("btnIniciar").disabled = false;
+      document.getElementById("btnDetener").disabled = true;
 
-        }
+      document.getElementById("resultado").textContent =
+        "⏳ Consultando asistencia...";
 
-      )
-
-      .then(function() {
-
-        document.getElementById("btnIniciar").disabled = true;
-        document.getElementById("btnDetener").disabled = false;
-
-      })
-
-      .catch(function(error) {
-
-        alert("No se pudo iniciar la cámara: " + error);
-
-        scanner = null;
-
-      });
+      // Enviar UNA sola vez
+      enviarAsistencia(codigoQR);
 
     })
-
     .catch(function(error) {
 
-      alert("No se pudo acceder a la cámara: " + error);
+      console.log("Error al detener cámara:", error);
 
-      scanner = null;
+      document.getElementById("resultado").textContent =
+        "⏳ Consultando asistencia...";
+
+      enviarAsistencia(codigoQR);
 
     });
 
-}
-
-
+},
 function detenerCamara() {
 
   if (!scanner) {
