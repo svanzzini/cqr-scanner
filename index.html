@@ -322,30 +322,36 @@ function iniciarCamara() {
 
 function enviarAsistencia(codigoQR) {
 
-  console.log("Enviando QR al puente:", codigoQR);
+  console.log("ENVIANDO QR:", codigoQR);
 
   document.getElementById("resultado").textContent =
     "⏳ Registrando asistencia...";
 
-  const puente =
-    document.getElementById("puenteCQR");
+  const url =
+    "https://script.google.com/macros/s/AKfycbwGZz07PcNVKTETqGtqKJa65XNzKNZXKmQYqVCFv95ZghQ9aiTiXHXYKVyXHn1g8Hv9ZQ/exec"
+    + "?action=registrarAsistencia"
+    + "&qr=" + encodeURIComponent(codigoQR)
+    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
+    + "&t=" + new Date().getTime();
 
-  if (!puente) {
+  console.log("URL:", url);
 
-    document.getElementById("resultado").textContent =
-      "❌ No se encontró el puente CQR.";
+  const img = document.createElement("img");
 
-    return;
-  }
+  img.style.display = "none";
 
- puente.contentWindow.postMessage(
-  {
-    tipo: "CQR_REGISTRAR",
-    codigoQR: codigoQR
-  },
-  "*"
-);
-  
+  img.src = url;
+
+  document.body.appendChild(img);
+
+  setTimeout(function() {
+
+    document.getElementById("resultado").innerHTML =
+      "✅ <strong>Solicitud enviada</strong><br>" +
+      "QR: " + codigoQR;
+
+  }, 1500);
+
 }
 
 window.addEventListener("message", function(event) {
