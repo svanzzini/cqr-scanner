@@ -431,7 +431,24 @@ window.addEventListener("message", function(event) {
 <iframe
   id="puenteCQR"
   src="https://script.google.com/macros/s/AKfycbwGZz07PcNVKTETqGtqKJa65XNzKNZXKmQYqVCFv95ZghQ9aiTiXHXYKVyXHn1g8Hv9ZQ/exec?puente=1"
-  style="display:none;"
+  style="position:absolute; width:1px; height:1px; border:0; opacity:0;"
 ></iframe>
+  <script>
+
+const puente = document.getElementById("puenteCQR");
+
+puente.addEventListener("load", function() {
+
+  console.log("✅ PUENTE CARGADO CORRECTAMENTE");
+
+});
+
+puente.addEventListener("error", function(error) {
+
+  console.error("❌ ERROR AL CARGAR PUENTE:", error);
+
+});
+
+</script>
 </body>
 </html>
