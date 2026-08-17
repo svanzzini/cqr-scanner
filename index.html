@@ -322,67 +322,116 @@ function iniciarCamara() {
 
 function enviarAsistencia(codigoQR) {
 
-  const url =
-    "https://script.google.com/macros/s/AKfycbymGjNfkG3spXk_eUT-gGbpuPsvJXUSPBTvSKx3wN_AskNiU9J1Bi_DAqtrQ3TImqOjTQ/exec"
-    + "?action=registrarAsistencia"
-    + "&qr=" + encodeURIComponent(codigoQR)
-    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
-    + "&callback=respuestaAsistencia";
-
-  console.log("Enviando QR:", codigoQR);
-  console.log("URL:", url);
+  console.log("Enviando QR al puente:", codigoQR);
 
   document.getElementById("resultado").textContent =
-    "⏳ Consultando asistencia...";
+    "⏳ Registrando asistencia...";
 
-  const script = document.createElement("script");
+  const puente =
+    document.getElementById("puenteCQR");
 
-  script.src = url;
+  if (!puente) {
 
-  document.body.appendChild(script);
-}
+    document.getElementById("resultado").textContent =
+      "❌ No se encontró el puente CQR.";
 
-
-window.respuestaAsistencia = function(resultado) {
-
-  console.log("RESPUESTA RECIBIDA:", resultado);
-
-  const resultadoDiv =
-    document.getElementById("resultado");
-
-  if (resultado.ok) {
-
-    resultadoDiv.innerHTML =
-      "✅ <strong>Asistencia registrada</strong><br>" +
-      resultado.nombre + " " +
-      resultado.apellido + "<br>" +
-      "Decanato: " +
-      resultado.decanato;
-
-  } else if (resultado.duplicado) {
-
-    resultadoDiv.innerHTML =
-      "⚠️ <strong>Asistencia ya registrada</strong><br>" +
-      resultado.nombre + " " +
-      resultado.apellido + "<br>" +
-      "Decanato: " +
-      resultado.decanato;
-
-  } else {
-
-    resultadoDiv.innerHTML =
-      "❌ <strong>Error</strong><br>" +
-      (
-        resultado.error ||
-        resultado.mensaje ||
-        "No se pudo registrar."
-      );
+    return;
   }
 
-};
+  puente.contentWindow.postMessage(
+    {
+      tipo: "CQR_REGISTRAR",
+      codigoQR: codigoQR
+    },
+    "https://script.google.com"
+  );
+
+}
+
+window.addEventListener("message", function(event) {
+
+  if (
+    event.origin !== "https://script.google.com" &&
+    event.origin !== "https://script.googleusercontent.com"
+  ) {
+    return;
+  }
+
+  const datos = event.data;
+
+  console.log("Respuesta del puente:", datos);
+
+  if (!datos) {
+    return;
+  }
+
+
+  // ==============================
+  // RESPUESTA CORRECTA
+  // ==============================
+
+  if (datos.tipo === "CQR_RESULTADO") {
+
+    const resultado = datos.resultado;
+
+    if (resultado.ok) {
+
+      document.getElementById("resultado").innerHTML =
+        "✅ <strong>Asistencia registrada</strong><br>" +
+        resultado.nombre + " " +
+        resultado.apellido + "<br>" +
+        "Decanato: " +
+        resultado.decanato;
+
+    }
+
+    else if (resultado.duplicado) {
+
+      document.getElementById("resultado").innerHTML =
+        "⚠️ <strong>Asistencia ya registrada</strong><br>" +
+        resultado.nombre + " " +
+        resultado.apellido + "<br>" +
+        "Decanato: " +
+        resultado.decanato;
+
+    }
+
+    else {
+
+      document.getElementById("resultado").innerHTML =
+        "❌ <strong>Error</strong><br>" +
+        (
+          resultado.error ||
+          resultado.mensaje ||
+          "No se pudo registrar."
+        );
+
+    }
+
+    return;
+  }
+
+
+  // ==============================
+  // ERROR DEL PUENTE
+  // ==============================
+
+  if (datos.tipo === "CQR_ERROR") {
+
+    document.getElementById("resultado").innerHTML =
+      "❌ <strong>Error</strong><br>" +
+      datos.mensaje;
+
+  }
+
+});
 
 
 </script>
-
+<iframe
+  id="puenteCQR"
+  src="https://script.google.com/macros/s/AKfycbxcC2QbldGfViMwHnYc44oeJ2_rR6gdjMIqp8lhDp4u6FPi1hHsEQshq8mJ2hRu7O_Ucw/exec?puente=1"
+  style="display:none;"
+></iframe>
 </body>
 </html>
