@@ -338,14 +338,14 @@ function enviarAsistencia(codigoQR) {
     return;
   }
 
-  puente.contentWindow.postMessage(
-    {
-      tipo: "CQR_REGISTRAR",
-      codigoQR: codigoQR
-    },
-    "https://script.google.com"
-  );
-
+ puente.contentWindow.postMessage(
+  {
+    tipo: "CQR_REGISTRAR",
+    codigoQR: codigoQR
+  },
+  "*"
+);
+  
 }
 
 window.addEventListener("message", function(event) {
