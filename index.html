@@ -78,6 +78,10 @@
     #btnDetener:disabled {
       background: #ccc;
     }
+    #btnProcesar {
+  background: #2e7d32;
+  color: white;
+}
   </style>
 </head>
 
@@ -98,6 +102,12 @@
     <button id="btnDetener" disabled>
       Detener Cámara
     </button>
+<button
+  id="btnProcesar"
+  onclick="procesarQR()"
+>
+  Procesar
+</button>
 
     <div id="reader"></div>
 
@@ -117,18 +127,31 @@
 
 
 <script>
+<script>
 
 let scanner = null;
 let escaneados = [];
+let procesando = false;
 
-document.getElementById("btnIniciar").addEventListener("click", iniciarCamara);
 
-document.getElementById("btnDetener").addEventListener("click", detenerCamara);
+// ========================================
+// BOTONES
+// ========================================
 
+document.getElementById("btnIniciar")
+  .addEventListener("click", iniciarCamara);
+
+document.getElementById("btnDetener")
+  .addEventListener("click", detenerCamara);
+
+
+// ========================================
+// INICIAR CÁMARA
+// ========================================
 
 function iniciarCamara() {
 
-  if (scanner) {
+  if (scanner || procesando) {
     return;
   }
 
@@ -139,18 +162,24 @@ function iniciarCamara() {
     .then(function(cameras) {
 
       if (!cameras || cameras.length === 0) {
-        throw new Error("No se encontró ninguna cámara.");
+        throw new Error(
+          "No se encontró ninguna cámara."
+        );
       }
 
       const cameraId = cameras[0].id;
 
-      scanner.start(
+      return scanner.start(
 
         cameraId,
 
         {
           fps: 15,
-          qrbox: function(viewfinderWidth, viewfinderHeight) {
+
+          qrbox: function(
+            viewfinderWidth,
+            viewfinderHeight
+          ) {
 
             const minEdgeSize =
               Math.min(
@@ -170,18 +199,31 @@ function iniciarCamara() {
           }
         },
 
+
+        // ==================================
+        // QR LEÍDO
+        // ==================================
+
         function(decodedText) {
 
-          if (scanner === null) {
+          if (!scanner) {
             return;
           }
+
 
           console.log(
             "QR leído:",
             decodedText
           );
 
-          let codigoQR = decodedText;
+
+          // =================================
+          // OBTENER CÓDIGO
+          // =================================
+
+          let codigoQR =
+            decodedText;
+
 
           try {
 
@@ -191,99 +233,127 @@ function iniciarCamara() {
             const qrParametro =
               url.searchParams.get("qr");
 
+
             if (qrParametro) {
-              codigoQR = qrParametro;
+
+              codigoQR =
+                qrParametro;
+
             }
-
-          } catch (error) {
-
-            codigoQR = decodedText;
 
           }
 
-          const scannerActual = scanner;
+          catch (error) {
 
-          scanner = null;
+            codigoQR =
+              decodedText;
 
-          scannerActual.stop()
+          }
 
-            .then(function() {
 
-              scannerActual.clear();
+          codigoQR =
+            codigoQR.trim();
 
-              document.getElementById(
-                "btnIniciar"
-              ).disabled = false;
 
-              document.getElementById(
-                "btnDetener"
-              ).disabled = true;
+          console.log(
+            "Código QR:",
+            codigoQR
+          );
 
-              document.getElementById(
-                "resultado"
-              ).textContent =
-                "⏳ Consultando asistencia...";
 
-              enviarAsistencia(codigoQR);
+          // =================================
+          // EVITAR DUPLICADOS EN CAPTURA
+          // =================================
 
-            })
+          if (
+            escaneados.includes(codigoQR)
+          ) {
 
-            .catch(function(error) {
+            document.getElementById(
+              "resultado"
+            ).innerHTML =
+              "⚠️ <strong>QR ya capturado</strong><br>" +
+              codigoQR;
 
-              console.log(
-                "Error al detener cámara:",
-                error
-              );
+            return;
 
-              document.getElementById(
-                "resultado"
-              ).textContent =
-                "⏳ Consultando asistencia...";
+          }
 
-              enviarAsistencia(codigoQR);
 
-            });
+          // =================================
+          // GUARDAR QR
+          // =================================
+
+          escaneados.push(
+            codigoQR
+          );
+
+
+          // =================================
+          // CONTADOR
+          // =================================
+
+          document.getElementById(
+            "contador"
+          ).textContent =
+            escaneados.length;
+
+
+          // =================================
+          // MENSAJE
+          // =================================
+
+          document.getElementById(
+            "resultado"
+          ).innerHTML =
+            "✅ <strong>QR capturado</strong><br>" +
+            codigoQR;
+
+
+          console.log(
+            "QR almacenados:",
+            escaneados
+          );
 
         },
 
+
+        // ==================================
+        // ERRORES NORMALES
+        // ==================================
+
         function(errorMessage) {
 
-          // Errores normales mientras busca el QR.
-          // No mostramos mensajes.
+          // Ignorar errores normales
+          // de búsqueda del QR.
 
         }
 
-      )
+      );
 
-      .then(function() {
+    })
 
-        document.getElementById(
-          "btnIniciar"
-        ).disabled = true;
+    .then(function() {
 
-        document.getElementById(
-          "btnDetener"
-        ).disabled = false;
+      document.getElementById(
+        "btnIniciar"
+      ).disabled = true;
 
-      })
-
-      .catch(function(error) {
-
-        alert(
-          "No se pudo iniciar la cámara: " +
-          error
-        );
-
-        scanner = null;
-
-      });
+      document.getElementById(
+        "btnDetener"
+      ).disabled = false;
 
     })
 
     .catch(function(error) {
 
+      console.error(
+        "Error cámara:",
+        error
+      );
+
       alert(
-        "No se pudo acceder a la cámara: " +
+        "No se pudo iniciar la cámara: " +
         error
       );
 
@@ -292,76 +362,258 @@ function iniciarCamara() {
     });
 
 }
-  
-  function detenerCamara() {
+
+
+// ========================================
+// DETENER CÁMARA
+// ========================================
+
+function detenerCamara() {
 
   if (!scanner) {
     return;
   }
 
-  scanner.stop()
+
+  const scannerActual =
+    scanner;
+
+
+  scanner = null;
+
+
+  scannerActual.stop()
 
     .then(function() {
 
-      scanner.clear();
+      scannerActual.clear();
 
-      scanner = null;
 
-      document.getElementById("btnIniciar").disabled = false;
-      document.getElementById("btnDetener").disabled = true;
+      document.getElementById(
+        "btnIniciar"
+      ).disabled = false;
+
+
+      document.getElementById(
+        "btnDetener"
+      ).disabled = true;
 
     })
 
     .catch(function(error) {
 
-      console.log("Error al detener cámara:", error);
+      console.error(
+        "Error al detener cámara:",
+        error
+      );
 
     });
 
 }
 
- function enviarAsistencia(codigoQR) {
 
-  console.log("ENVIANDO QR:", codigoQR);
+// ========================================
+// PROCESAR QR
+// ========================================
 
-  document.getElementById("resultado").textContent =
-    "⏳ Registrando asistencia...";
+function procesarQR() {
 
-  const url =
-    "https://script.google.com/macros/s/AKfycbzm-gdlYRfpJF3qg7XNvRof4e0N9p9h3AodvMhCcmDEinIebxlTD6RjjuUhLVa88_SdRw/exec"
-    + "?action=registrarAsistencia"
-    + "&qr=" + encodeURIComponent(codigoQR)
-    + "&dispositivo=" + encodeURIComponent("CQR Scanner")
-    + "&t=" + new Date().getTime();
+  if (procesando) {
+    return;
+  }
 
-  console.log("URL:", url);
 
-  fetch(url, {
-    method: "GET",
-    mode: "no-cors",
-    cache: "no-store"
-  })
-  .then(function() {
+  if (escaneados.length === 0) {
 
-    console.log("✅ SOLICITUD ENVIADA A APPS SCRIPT");
+    document.getElementById(
+      "resultado"
+    ).innerHTML =
+      "⚠️ No hay códigos para procesar.";
 
-  })
-  .catch(function(error) {
+    return;
 
-    console.error(
-      "❌ ERROR AL ENVIAR A APPS SCRIPT:",
-      error
+  }
+
+
+  procesando = true;
+
+
+  detenerCamara();
+
+
+  const total =
+    escaneados.length;
+
+
+  let indice = 0;
+  let registrados = 0;
+  let duplicados = 0;
+  let errores = 0;
+
+
+  document.getElementById(
+    "resultado"
+  ).innerHTML =
+    "⏳ <strong>Procesando...</strong><br>" +
+    "0 de " +
+    total;
+
+
+  document.getElementById(
+    "btnIniciar"
+  ).disabled = true;
+
+
+  document.getElementById(
+    "btnDetener"
+  ).disabled = true;
+
+
+  function siguiente() {
+
+    if (indice >= total) {
+
+      finalizar();
+
+      return;
+
+    }
+
+
+    const codigo =
+      escaneados[indice];
+
+
+    const numero =
+      indice + 1;
+
+
+    document.getElementById(
+      "resultado"
+    ).innerHTML =
+      "⏳ <strong>Procesando...</strong><br>" +
+      numero +
+      " de " +
+      total;
+
+
+    google.script.run
+
+      .withSuccessHandler(
+        function(resultado) {
+
+          console.log(
+            "Resultado:",
+            codigo,
+            resultado
+          );
+
+
+          if (
+            resultado &&
+            resultado.ok
+          ) {
+
+            registrados++;
+
+          }
+
+          else if (
+            resultado &&
+            resultado.duplicado
+          ) {
+
+            duplicados++;
+
+          }
+
+          else {
+
+            errores++;
+
+          }
+
+
+          indice++;
+
+          siguiente();
+
+        }
+      )
+
+      .withFailureHandler(
+        function(error) {
+
+          console.error(
+            "Error:",
+            codigo,
+            error
+          );
+
+
+          errores++;
+
+          indice++;
+
+          siguiente();
+
+        }
+      )
+
+      .registrarAsistencia(
+        codigo,
+        "CQR Scanner"
+      );
+
+  }
+
+
+  function finalizar() {
+
+    procesando = false;
+
+
+    document.getElementById(
+      "resultado"
+    ).innerHTML =
+
+      "✅ <strong>Procesamiento terminado</strong><br><br>" +
+
+      "Total: " +
+      total +
+      "<br>" +
+
+      "🟢 Registradas: " +
+      registrados +
+      "<br>" +
+
+      "🟡 Duplicadas: " +
+      duplicados +
+      "<br>" +
+
+      "🔴 Errores: " +
+      errores;
+
+
+    document.getElementById(
+      "btnIniciar"
+    ).disabled = false;
+
+
+    console.log(
+      "Procesamiento terminado:",
+      {
+        total: total,
+        registrados: registrados,
+        duplicados: duplicados,
+        errores: errores
+      }
     );
 
-  });
+  }
 
-  setTimeout(function() {
 
-    document.getElementById("resultado").innerHTML =
-      "✅ <strong>Solicitud enviada</strong><br>" +
-      "QR: " + codigoQR;
-
-  }, 1500);
+  siguiente();
 
 }
   </script>
