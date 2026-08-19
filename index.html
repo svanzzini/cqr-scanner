@@ -403,8 +403,6 @@ function detenerCamara() {
 // ========================================
 // PROCESAR TODOS LOS QR
 // ========================================
-
-
 function procesarQR() {
 
   if (procesando) {
@@ -433,8 +431,7 @@ function procesarQR() {
 
   document.getElementById("resultado").innerHTML =
     "⏳ <strong>Procesando...</strong><br>" +
-    "0 de " +
-    total;
+    "0 de " + total;
 
 
   document.getElementById("btnIniciar").disabled = true;
@@ -443,7 +440,65 @@ function procesarQR() {
 
 
   // ========================================
-  // PROCESAR SIGUIENTE QR
+  // CALLBACK ÚNICO
+  // ========================================
+
+  window.respuestaAsistencia = function(resultado) {
+
+    console.log(
+      "Respuesta Apps Script:",
+      resultado
+    );
+
+
+    // ======================================
+    // REGISTRADO
+    // ======================================
+
+    if (
+      resultado &&
+      resultado.ok === true
+    ) {
+
+      registrados++;
+
+    }
+
+
+    // ======================================
+    // DUPLICADO
+    // ======================================
+
+    else if (
+      resultado &&
+      resultado.duplicado === true
+    ) {
+
+      duplicados++;
+
+    }
+
+
+    // ======================================
+    // ERROR
+    // ======================================
+
+    else {
+
+      errores++;
+
+    }
+
+
+    indice++;
+
+    siguiente();
+
+  };
+
+
+  // ========================================
+  // SIGUIENTE QR
   // ========================================
 
   function siguiente() {
@@ -458,6 +513,7 @@ function procesarQR() {
 
     const codigoQR =
       escaneados[indice];
+
 
     const numero =
       indice + 1;
@@ -479,87 +535,6 @@ function procesarQR() {
 
 
     // ======================================
-    // NOMBRE ÚNICO PARA JSONP
-    // ======================================
-
-    const nombreCallback =
-      "respuestaCQR_" +
-      Date.now() +
-      "_" +
-      indice;
-
-
-    // ======================================
-    // CREAR FUNCIÓN CALLBACK
-    // ======================================
-
-    window[nombreCallback] =
-      function(resultado) {
-
-        console.log(
-          "Respuesta Apps Script:",
-          resultado
-        );
-
-
-        // ==================================
-        // REGISTRADO
-        // ==================================
-
-        if (
-          resultado &&
-          resultado.ok === true
-        ) {
-
-          registrados++;
-
-        }
-
-
-        // ==================================
-        // DUPLICADO
-        // ==================================
-
-        else if (
-          resultado &&
-          resultado.duplicado === true
-        ) {
-
-          duplicados++;
-
-        }
-
-
-        // ==================================
-        // ERROR
-        // ==================================
-
-        else {
-
-          errores++;
-
-        }
-
-
-        // ==================================
-        // LIMPIAR CALLBACK
-        // ==================================
-
-        delete window[nombreCallback];
-
-
-        // ==================================
-        // CONTINUAR
-        // ==================================
-
-        indice++;
-
-        siguiente();
-
-      };
-
-
-    // ======================================
     // URL JSONP
     // ======================================
 
@@ -570,8 +545,7 @@ function procesarQR() {
         encodeURIComponent(codigoQR)
       + "&dispositivo=" +
         encodeURIComponent("CQR Scanner")
-      + "&callback=" +
-        encodeURIComponent(nombreCallback)
+      + "&callback=respuestaAsistencia"
       + "&t=" +
         new Date().getTime();
 
@@ -583,56 +557,37 @@ function procesarQR() {
 
 
     // ======================================
-    // CREAR SCRIPT
+    // SCRIPT
     // ======================================
 
     const script =
       document.createElement("script");
 
 
-    script.src =
-      url;
+    script.src = url;
+
+    script.async = true;
 
 
-    script.async =
-      true;
+    script.onerror = function(error) {
+
+      console.error(
+        "❌ Error JSONP:",
+        codigoQR,
+        error
+      );
 
 
-    script.onerror =
-      function(error) {
+      errores++;
 
-        console.error(
-          "Error JSONP:",
-          codigoQR,
-          error
-        );
+      indice++;
 
+      siguiente();
 
-        errores++;
+    };
 
 
-        delete window[nombreCallback];
-
-
-        if (script.parentNode) {
-
-          script.parentNode.removeChild(
-            script
-          );
-
-        }
-
-
-        indice++;
-
-        siguiente();
-
-      };
-
-
-    document.body.appendChild(
-      script
-    );
+    document.body.appendChild(script);
 
   }
 
@@ -646,9 +601,7 @@ function procesarQR() {
     procesando = false;
 
 
-    document.getElementById(
-      "resultado"
-    ).innerHTML =
+    document.getElementById("resultado").innerHTML =
 
       "✅ <strong>Procesamiento terminado</strong><br><br>" +
 
@@ -710,7 +663,7 @@ function procesarQR() {
 
 
   // ========================================
-  // INICIAR PROCESAMIENTO
+  // INICIAR
   // ========================================
 
   siguiente();
