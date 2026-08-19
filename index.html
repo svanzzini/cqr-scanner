@@ -320,7 +320,7 @@ function iniciarCamara() {
 
 }
 
-  function enviarAsistencia(codigoQR) {
+ function enviarAsistencia(codigoQR) {
 
   console.log("ENVIANDO QR:", codigoQR);
 
@@ -336,13 +336,24 @@ function iniciarCamara() {
 
   console.log("URL:", url);
 
-  const img = document.createElement("img");
+  fetch(url, {
+    method: "GET",
+    mode: "no-cors",
+    cache: "no-store"
+  })
+  .then(function() {
 
-  img.style.display = "none";
+    console.log("✅ SOLICITUD ENVIADA A APPS SCRIPT");
 
-  img.src = url;
+  })
+  .catch(function(error) {
 
-  document.body.appendChild(img);
+    console.error(
+      "❌ ERROR AL ENVIAR A APPS SCRIPT:",
+      error
+    );
+
+  });
 
   setTimeout(function() {
 
@@ -353,7 +364,7 @@ function iniciarCamara() {
   }, 1500);
 
 }
-</script>
+  </script>
 <iframe
   id="puenteCQR"
   src="https://script.google.com/macros/s/AKfycbwGZz07PcNVKTETqGtqKJa65XNzKNZXKmQYqVCFv95ZghQ9aiTiXHXYKVyXHn1g8Hv9ZQ/exec?puente=1"
