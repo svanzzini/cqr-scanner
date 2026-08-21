@@ -422,9 +422,9 @@ function detenerCamara() {
 
   const total = escaneados.length;
 
-  let indice = 0;
   let registrados = 0;
   let duplicados = 0;
+  let noRegistrados = 0;
   let errores = 0;
 
 
@@ -462,31 +462,43 @@ function detenerCamara() {
       registrados++;
 
     }
+// ======================================
+// DUPLICADO
+// ======================================
+
+else if (
+  resultado &&
+  resultado.duplicado === true
+) {
+
+  duplicados++;
+
+}
 
 
-    // ======================================
-    // DUPLICADO
-    // ======================================
+// ======================================
+// NO REGISTRADO
+// ======================================
 
-    else if (
-      resultado &&
-      resultado.duplicado === true
-    ) {
+else if (
+  resultado &&
+  resultado.noRegistrado === true
+) {
 
-      duplicados++;
+  noRegistrados++;
 
-    }
+}
 
 
-    // ======================================
-    // ERROR
-    // ======================================
+// ======================================
+// ERROR
+// ======================================
 
-    else {
+else {
 
-      errores++;
+  errores++;
 
-    }
+}
 
 
     indice++;
