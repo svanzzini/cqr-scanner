@@ -401,6 +401,7 @@ function detenerCamara() {
 // ========================================
 // PROCESAR TODOS LOS QR
 // ========================================
+
 function procesarQR() {
 
   if (procesando) {
@@ -408,15 +409,12 @@ function procesarQR() {
   }
 
   if (escaneados.length === 0) {
-
     document.getElementById("resultado").innerHTML =
       "⚠️ No hay códigos para procesar.";
-
     return;
   }
 
   procesando = true;
-
   detenerCamara();
 
   const total = escaneados.length;
@@ -427,347 +425,110 @@ function procesarQR() {
   let noRegistrados = 0;
   let errores = 0;
 
-
   document.getElementById("resultado").innerHTML =
     "⏳ <strong>Procesando...</strong><br>" +
     "0 de " + total;
-
 
   document.getElementById("btnIniciar").disabled = true;
   document.getElementById("btnDetener").disabled = true;
   document.getElementById("btnProcesar").disabled = true;
 
-
-  // ========================================
-  // CALLBACK JSONP
-  // ========================================
-
   window.respuestaAsistencia = function(resultado) {
 
-    console.log(
-      "Respuesta Apps Script:",
-      resultado
-    );
+    console.log("Respuesta Apps Script:", resultado);
 
-
-    // REGISTRADO
-
-    if (
-      resultado &&
-      resultado.ok === true
-    ) {
-
+    if (resultado && resultado.ok === true) {
       registrados++;
-
-    }
-
-
-    // DUPLICADO
-
-    else if (
-      resultado &&
-      resultado.duplicado === true
-    ) {
-
+    } else if (resultado && resultado.duplicado === true) {
       duplicados++;
-
-    }
-
-
-    // NO REGISTRADO
-
-    else if (
-      resultado &&
-      resultado.noRegistrado === true
-    ) {
-
+    } else if (resultado && resultado.noRegistrado === true) {
       noRegistrados++;
-
-    }
-
-
-    // ERROR
-
-    else {
-
+    } else {
       errores++;
-
     }
-
 
     indice++;
-
     siguiente();
-
   };
-
-
-  // ========================================
-  // SIGUIENTE QR
-  // ========================================
 
   function siguiente() {
 
     if (indice >= total) {
-
       finalizar();
-
       return;
     }
 
-
-    const codigoQR =
-      escaneados[indice];
-
-
-    const numero =
-      indice + 1;
-
+    const codigoQR = escaneados[indice];
+    const numero = indice + 1;
 
     document.getElementById("resultado").innerHTML =
       "⏳ <strong>Procesando...</strong><br>" +
-      numero +
-      " de " +
-      total +
-      "<br>" +
-      codigoQR;
+      numero + " de " + total + "<br>" + codigoQR;
 
-
-    console.log(
-      "Procesando QR:",
-      codigoQR
-    );
-
-
-    // ======================================
-    // URL JSONP
-    // ======================================
+    console.log("Procesando QR:", codigoQR);
 
     const url =
       "https://script.google.com/macros/s/AKfycbwDeBjH6JUtDVm8QdtvwlucMVbD0C9YZ_oSxOadgnN4PspqklHQt4iD7R-KIidGquI3BQ/exec" +
       "?action=registrarAsistencia" +
-      "&qr=" +
-      encodeURIComponent(codigoQR) +
-      "&dispositivo=" +
-      encodeURIComponent("CQR Scanner") +
+      "&qr=" + encodeURIComponent(codigoQR) +
+      "&dispositivo=" + encodeURIComponent("CQR Scanner") +
       "&callback=respuestaAsistencia" +
-      "&t=" +
-      new Date().getTime();
+      "&t=" + Date.now();
 
+    console.log("URL JSONP:", url);
 
-    console.log(
-      "URL JSONP:",
-      url
-    );
-
-
-    // ======================================
-    // CREAR SCRIPT
-    // ======================================
-
-    const script =
-      document.createElement("script");
-
-
+    const script = document.createElement("script");
     script.src = url;
-
     script.async = true;
-
-
-    // ======================================
-    // TIEMPO MÁXIMO
-    // ======================================
 
     let terminado = false;
 
+    const tiempoEspera = setTimeout(function() {
 
-    const tiempoEspera =
-      setTimeout(function() {
+      if (terminado) {
+        return;
+      }
 
-        if (terminado) {
-          return;
-        }
+      terminado = true;
 
-        terminado = true;
+      console.error("⏱️ Tiempo agotado:", codigoQR);
 
-        console.error(
-          "⏱️ Tiempo agotado:",
-          codigoQR
-        );
+      errores++;
+      limpiar();
 
-        errores++;
+      indice++;
+      siguiente();
 
-        limpiar();
-
-        indice++;
-
-        siguiente();
-
-      }, 15000);
-
-
-    // ======================================
-    // ERROR
-    // ======================================
-
-    script.onerror =
-      function(error) {
-
-        if (terminado) {
-          return;
-        }
-
-        terminado = true;
-
-        clearTimeout(
-          tiempoEspera
-        );
-
-
-        console.error(
-          "❌ Error JSONP:",
-          codigoQR,
-          error
-        );
-
-
-        errores++;
-
-        limpiar();
-
-        indice++;
-
-        siguiente();
-
-      };
-
-
-    // ======================================
-    // LIMPIAR
-    // ======================================
+    }, 15000);
 
     function limpiar() {
 
-      clearTimeout(
-        tiempoEspera
-      );
-
+      clearTimeout(tiempoEspera);
 
       if (script.parentNode) {
-
-        script.parentNode.removeChild(
-          script
-        );
-
+        script.parentNode.removeChild(script);
       }
-
     }
 
+    script.onerror = function(error) {
+
+      if (terminado) {
+        return;
+      }
+
+      terminado = true;
+
+      console.error("❌ Error JSONP:", codigoQR, error);
+
+      errores++;
+      limpiar();
+
+      indice++;
+      siguiente();
+    };
 
     document.body.appendChild(script);
-
   }
-
-
-  // ========================================
-  // FINALIZAR
-  // ========================================
-
-  function finalizar() {
-
-    procesando = false;
-
-
-    document.getElementById("resultado").innerHTML =
-
-      "✅ <strong>Procesamiento terminado</strong><br><br>" +
-
-      "Total escaneados: " +
-      total +
-      "<br>" +
-
-      "🟢 Registrados: " +
-      registrados +
-      "<br>" +
-
-      "🟡 Duplicados: " +
-      duplicados +
-      "<br>" +
-
-      "🔴 No registrados: " +
-      noRegistrados +
-      "<br>" +
-
-      "❌ Errores: " +
-      errores;
-
-
-    document.getElementById(
-      "btnIniciar"
-    ).disabled = false;
-
-
-    document.getElementById(
-      "btnDetener"
-    ).disabled = true;
-
-
-    document.getElementById(
-      "btnProcesar"
-    ).disabled = false;
-
-
-    console.log(
-      "=============================="
-    );
-
-    console.log(
-      "PROCESAMIENTO TERMINADO"
-    );
-
-    console.log(
-      "Total:",
-      total
-    );
-
-    console.log(
-      "Registrados:",
-      registrados
-    );
-
-    console.log(
-      "Duplicados:",
-      duplicados
-    );
-
-    console.log(
-      "No registrados:",
-      noRegistrados
-    );
-
-    console.log(
-      "Errores:",
-      errores
-    );
-
-    console.log(
-      "=============================="
-    );
-
-  }
-
-
-  // ========================================
-  // INICIAR PROCESAMIENTO
-  // ========================================
-
-  siguiente();
-
-}
-
-  // ========================================
-  // FINALIZAR
-  // ========================================
 
   function finalizar() {
 
@@ -785,24 +546,15 @@ function procesarQR() {
     document.getElementById("btnDetener").disabled = true;
     document.getElementById("btnProcesar").disabled = false;
 
-    console.log("==============================");
     console.log("PROCESAMIENTO TERMINADO");
     console.log("Total:", total);
     console.log("Registrados:", registrados);
     console.log("Duplicados:", duplicados);
     console.log("No registrados:", noRegistrados);
     console.log("Errores:", errores);
-    console.log("==============================");
-
   }
 
-
-  // ========================================
-  // INICIAR PROCESAMIENTO
-  // ========================================
-
   siguiente();
-
 }
 
 </script>
