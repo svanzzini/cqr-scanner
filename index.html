@@ -1,14 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>CQR - Lector QR</title>
 
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script
+    src="https://unpkg.com/html5-qrcode"
+    type="text/javascript">
+  </script>
 
   <style>
+
     body {
       font-family: Arial, sans-serif;
       background: #f2f2f2;
@@ -37,7 +47,7 @@
 
     #reader {
       width: 100%;
-      margin-top: 20px;f
+      margin-top: 20px;
     }
 
     .contador {
@@ -65,7 +75,6 @@
       cursor: pointer;
     }
 
-    
     #btnIniciar {
       background: #1769c2;
       color: white;
@@ -79,12 +88,21 @@
     #btnDetener:disabled {
       background: #ccc;
     }
+
     #btnProcesar {
-  background: #2e7d32;
-  color: white;
-}
+      background: #2e7d32;
+      color: white;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
   </style>
+
 </head>
+
 
 <body>
 
@@ -96,39 +114,57 @@
       Sistema de Control de Asistencia QR
     </div>
 
+
     <button id="btnIniciar">
       Iniciar Cámara
     </button>
 
-    <button id="btnDetener" disabled>
+
+    <button
+      id="btnDetener"
+      disabled
+    >
       Detener Cámara
     </button>
-<button
-  id="btnProcesar"
->
-  Procesar
-</button>
+
+
+    <button id="btnProcesar">
+      Procesar
+    </button>
+
 
     <div id="reader"></div>
 
-    <div class="contador" id="contador">
+
+    <div
+      class="contador"
+      id="contador"
+    >
       0
     </div>
+
 
     <div>
       Escaneados
     </div>
 
-    <div class="resultado" id="resultado">
+
+    <div
+      class="resultado"
+      id="resultado"
+    >
       Esperando QR...
     </div>
 
   </div>
 
+
 <script>
 
 let scanner = null;
+
 let escaneados = [];
+
 let procesando = false;
 
 
@@ -136,14 +172,29 @@ let procesando = false;
 // BOTONES
 // ========================================
 
-document.getElementById("btnIniciar")
-  .addEventListener("click", iniciarCamara);
+document
+  .getElementById("btnIniciar")
+  .addEventListener(
+    "click",
+    iniciarCamara
+  );
 
-document.getElementById("btnDetener")
-  .addEventListener("click", detenerCamara);
 
-document.getElementById("btnProcesar")
-  .addEventListener("click", procesarQR);
+document
+  .getElementById("btnDetener")
+  .addEventListener(
+    "click",
+    detenerCamara
+  );
+
+
+document
+  .getElementById("btnProcesar")
+  .addEventListener(
+    "click",
+    procesarQR
+  );
+
 
 
 // ========================================
@@ -152,199 +203,276 @@ document.getElementById("btnProcesar")
 
 function iniciarCamara() {
 
-  if (scanner || procesando) {
+  if (
+    scanner ||
+    procesando
+  ) {
+
     return;
+
   }
 
-  scanner = new Html5Qrcode("reader");
 
-  Html5Qrcode.getCameras()
-
-    .then(function(cameras) {
-
-      if (!cameras || cameras.length === 0) {
-        throw new Error(
-          "No se encontró ninguna cámara."
-        );
-      }
-
-      scanner.start(
-  {
-    facingMode: "environment"
-  },
-
-        {
-          fps: 15,
-
-          qrbox: function(
-            viewfinderWidth,
-            viewfinderHeight
-          ) {
-
-            const minEdgeSize =
-              Math.min(
-                viewfinderWidth,
-                viewfinderHeight
-              );
-
-            const qrboxSize =
-              Math.floor(minEdgeSize * 0.70);
-
-            return {
-              width: qrboxSize,
-              height: qrboxSize
-            };
-          }
-        },
+  scanner =
+    new Html5Qrcode("reader");
 
 
-        // ================================
-        // QR LEÍDO
-        // ================================
+  Html5Qrcode
+    .getCameras()
 
-        function(decodedText) {
 
-          if (!scanner || procesando) {
-            return;
-          }
+    .then(
+      function(cameras) {
 
-          console.log(
-            "QR leído:",
-            decodedText
+        if (
+          !cameras ||
+          cameras.length === 0
+        ) {
+
+          throw new Error(
+            "No se encontró ninguna cámara."
           );
-
-
-          // Obtener código
-
-          let codigoQR = decodedText;
-
-          try {
-
-            const url =
-              new URL(decodedText);
-
-            const qrParametro =
-              url.searchParams.get("qr");
-
-            if (qrParametro) {
-              codigoQR = qrParametro;
-            }
-
-          } catch (error) {
-
-            codigoQR = decodedText;
-
-          }
-
-
-          codigoQR =
-            codigoQR.trim();
-
-
-          if (!codigoQR) {
-            return;
-          }
-
-
-          console.log(
-            "Código QR:",
-            codigoQR
-          );
-
-
-          // ================================
-          // EVITAR DUPLICADO EN CAPTURA
-          // ================================
-
-          if (escaneados.includes(codigoQR)) {
-
-            document.getElementById(
-              "resultado"
-            ).innerHTML =
-              "⚠️ <strong>QR ya capturado</strong><br>" +
-              codigoQR;
-
-            return;
-          }
-
-
-          // ================================
-          // GUARDAR QR
-          // ================================
-
-          escaneados.push(codigoQR);
-
-
-          // Contador
-
-          document.getElementById(
-            "contador"
-          ).textContent =
-            escaneados.length;
-
-
-          // Mensaje
-
-          document.getElementById(
-            "resultado"
-          ).innerHTML =
-            "✅ <strong>QR capturado</strong><br>" +
-            codigoQR;
-
-
-          console.log(
-            "Total capturados:",
-            escaneados.length
-          );
-
-        },
-
-
-        // Errores normales de lectura
-
-        function(errorMessage) {
-
-          // No mostrar nada.
 
         }
 
-      );
 
-    })
+        scanner.start(
 
-    .then(function() {
+          {
+            facingMode: "environment"
+          },
 
-      document.getElementById(
-        "btnIniciar"
-      ).disabled = true;
 
-      document.getElementById(
-        "btnDetener"
-      ).disabled = false;
+          {
+            fps: 15,
 
-    })
+            qrbox:
+              function(
+                viewfinderWidth,
+                viewfinderHeight
+              ) {
 
-    .catch(function(error) {
+                const minEdgeSize =
+                  Math.min(
+                    viewfinderWidth,
+                    viewfinderHeight
+                  );
 
-      console.error(
-        "Error cámara:",
-        error
-      );
 
-      alert(
-        "No se pudo iniciar la cámara:\n" +
-        error
-      );
+                const qrboxSize =
+                  Math.floor(
+                    minEdgeSize * 0.70
+                  );
 
-      scanner = null;
 
-      document.getElementById(
-        "btnIniciar"
-      ).disabled = false;
+                return {
 
-    });
+                  width: qrboxSize,
+
+                  height: qrboxSize
+
+                };
+
+              }
+
+          },
+
+
+          // ==================================
+          // QR LEÍDO
+          // ==================================
+
+          function(decodedText) {
+
+            if (
+              !scanner ||
+              procesando
+            ) {
+
+              return;
+
+            }
+
+
+            console.log(
+              "QR leído:",
+              decodedText
+            );
+
+
+            // ================================
+            // OBTENER CÓDIGO QR
+            // ================================
+
+            let codigoQR =
+              decodedText;
+
+
+            try {
+
+              const url =
+                new URL(decodedText);
+
+
+              const qrParametro =
+                url.searchParams.get("qr");
+
+
+              if (qrParametro) {
+
+                codigoQR =
+                  qrParametro;
+
+              }
+
+            }
+
+            catch (error) {
+
+              codigoQR =
+                decodedText;
+
+            }
+
+
+            codigoQR =
+              codigoQR.trim();
+
+
+            if (!codigoQR) {
+
+              return;
+
+            }
+
+
+            console.log(
+              "Código QR:",
+              codigoQR
+            );
+
+
+            // ================================
+            // EVITAR DUPLICADO EN CAPTURA
+            // ================================
+
+            if (
+              escaneados.includes(codigoQR)
+            ) {
+
+              document
+                .getElementById("resultado")
+                .innerHTML =
+
+                "⚠️ <strong>QR ya capturado</strong><br>" +
+                codigoQR;
+
+              return;
+
+            }
+
+
+            // ================================
+            // GUARDAR QR
+            // ================================
+
+            escaneados.push(
+              codigoQR
+            );
+
+
+            // ================================
+            // CONTADOR
+            // ================================
+
+            document
+              .getElementById("contador")
+              .textContent =
+              escaneados.length;
+
+
+            // ================================
+            // MENSAJE
+            // ================================
+
+            document
+              .getElementById("resultado")
+              .innerHTML =
+
+              "✅ <strong>QR capturado</strong><br>" +
+              codigoQR;
+
+
+            console.log(
+              "Total capturados:",
+              escaneados.length
+            );
+
+          },
+
+
+          // ================================
+          // ERRORES NORMALES DE LECTURA
+          // ================================
+
+          function(errorMessage) {
+
+            // No mostrar nada.
+
+          }
+
+        );
+
+      }
+
+    )
+
+
+    .then(
+      function() {
+
+        document
+          .getElementById("btnIniciar")
+          .disabled = true;
+
+
+        document
+          .getElementById("btnDetener")
+          .disabled = false;
+
+      }
+
+    )
+
+
+    .catch(
+      function(error) {
+
+        console.error(
+          "Error cámara:",
+          error
+        );
+
+
+        alert(
+          "No se pudo iniciar la cámara:\n" +
+          error
+        );
+
+
+        scanner = null;
+
+
+        document
+          .getElementById("btnIniciar")
+          .disabled = false;
+
+      }
+
+    );
 
 }
+
 
 
 // ========================================
@@ -354,53 +482,67 @@ function iniciarCamara() {
 function detenerCamara() {
 
   if (!scanner) {
+
     return;
+
   }
+
 
   const scannerActual =
     scanner;
 
+
   scanner = null;
 
-  scannerActual.stop()
 
-    .then(function() {
+  scannerActual
+    .stop()
 
-      scannerActual.clear();
 
-      document.getElementById(
-        "btnIniciar"
-      ).disabled = false;
+    .then(
+      function() {
 
-      document.getElementById(
-        "btnDetener"
-      ).disabled = true;
+        scannerActual.clear();
 
-    })
 
-    .catch(function(error) {
+        document
+          .getElementById("btnIniciar")
+          .disabled = false;
 
-      console.error(
-        "Error al detener cámara:",
-        error
-      );
 
-      document.getElementById(
-        "btnIniciar"
-      ).disabled = false;
+        document
+          .getElementById("btnDetener")
+          .disabled = true;
 
-      document.getElementById(
-        "btnDetener"
-      ).disabled = true;
+      }
 
-    });
+    )
+
+
+    .catch(
+      function(error) {
+
+        console.error(
+          "Error al detener cámara:",
+          error
+        );
+
+
+        document
+          .getElementById("btnIniciar")
+          .disabled = false;
+
+
+        document
+          .getElementById("btnDetener")
+          .disabled = true;
+
+      }
+
+    );
 
 }
 
-
-// ========================================
-// PROCESAR TODOS LOS QR
-// ========================================
 
 
 // ========================================
@@ -408,11 +550,15 @@ function detenerCamara() {
 // ========================================
 
 const URL_PUENTE =
-  "https://script.google.com/macros/s/AKfycbwDeBjH6JUtDVm8QdtvwlucMVbD0C9YZ_oSxOadgnN4PspqklHQt4iD7R-KIidGquI3BQ/exec?puente=1";
+  "https://script.google.com/macros/s/AKfycbzZ-GOf-VKFCyxplAvN8h9NsW16Qqrrd7YoDqb20r8xDXUYeZCXaNbEfsn9ieY3yYmtRw/exec?puente=1";
+
 
 let iframePuente = null;
+
 let puenteListo = false;
+
 let respuestaPuente = null;
+
 
 
 // ========================================
@@ -422,7 +568,9 @@ let respuestaPuente = null;
 function iniciarPuente() {
 
   if (iframePuente) {
+
     return;
+
   }
 
 
@@ -430,7 +578,9 @@ function iniciarPuente() {
     document.createElement("iframe");
 
 
-  iframePuente.style.display = "none";
+  iframePuente.style.display =
+    "none";
+
 
   iframePuente.src =
     URL_PUENTE;
@@ -444,7 +594,9 @@ function iniciarPuente() {
   console.log(
     "PUENTE CQR INICIANDO..."
   );
+
 }
+
 
 
 // ========================================
@@ -465,13 +617,15 @@ window.addEventListener(
       !event.data ||
       !event.data.tipo
     ) {
+
       return;
+
     }
 
 
-    // ================================
+    // ======================================
     // PUENTE LISTO
-    // ================================
+    // ======================================
 
     if (
       event.data.tipo ===
@@ -480,17 +634,20 @@ window.addEventListener(
 
       puenteListo = true;
 
+
       console.log(
         "✅ PUENTE CQR LISTO"
       );
 
+
       return;
+
     }
 
 
-    // ================================
+    // ======================================
     // RESULTADO
-    // ================================
+    // ======================================
 
     if (
       event.data.tipo ===
@@ -508,13 +665,15 @@ window.addEventListener(
 
       }
 
+
       return;
+
     }
 
 
-    // ================================
+    // ======================================
     // ERROR
-    // ================================
+    // ======================================
 
     if (
       event.data.tipo ===
@@ -545,7 +704,9 @@ window.addEventListener(
     }
 
   }
+
 );
+
 
 
 // ========================================
@@ -553,24 +714,38 @@ window.addEventListener(
 // ========================================
 
 iniciarPuente();
-  
+
+
+
+// ========================================
+// PROCESAR TODOS LOS QR
+// ========================================
+
 function procesarQR() {
 
   if (procesando) {
+
     return;
+
   }
 
 
-  if (escaneados.length === 0) {
+  if (
+    escaneados.length === 0
+  ) {
 
-    document.getElementById("resultado").innerHTML =
+    document
+      .getElementById("resultado")
+      .innerHTML =
       "⚠️ No hay códigos para procesar.";
 
     return;
+
   }
 
 
   procesando = true;
+
 
   detenerCamara();
 
@@ -590,25 +765,29 @@ function procesarQR() {
   let errores = 0;
 
 
-  document.getElementById("resultado").innerHTML =
+  document
+    .getElementById("resultado")
+    .innerHTML =
+
     "⏳ <strong>Procesando...</strong><br>" +
     "0 de " +
     total;
 
 
-  document.getElementById(
-    "btnIniciar"
-  ).disabled = true;
+  document
+    .getElementById("btnIniciar")
+    .disabled = true;
 
 
-  document.getElementById(
-    "btnDetener"
-  ).disabled = true;
+  document
+    .getElementById("btnDetener")
+    .disabled = true;
 
 
-  document.getElementById(
-    "btnProcesar"
-  ).disabled = true;
+  document
+    .getElementById("btnProcesar")
+    .disabled = true;
+
 
 
   // ========================================
@@ -679,9 +858,11 @@ function procesarQR() {
 
       indice++;
 
+
       siguiente();
 
     };
+
 
 
   // ========================================
@@ -697,6 +878,7 @@ function procesarQR() {
       finalizar();
 
       return;
+
     }
 
 
@@ -708,9 +890,9 @@ function procesarQR() {
       indice + 1;
 
 
-    document.getElementById(
-      "resultado"
-    ).innerHTML =
+    document
+      .getElementById("resultado")
+      .innerHTML =
 
       "⏳ <strong>Procesando...</strong><br>" +
 
@@ -729,9 +911,9 @@ function procesarQR() {
     );
 
 
-    // ====================================
+    // ======================================
     // VERIFICAR PUENTE
-    // ====================================
+    // ======================================
 
     if (
       !iframePuente ||
@@ -747,18 +929,21 @@ function procesarQR() {
 
       indice++;
 
+
       setTimeout(
         siguiente,
         500
       );
 
+
       return;
+
     }
 
 
-    // ====================================
+    // ======================================
     // ENVIAR QR AL PUENTE
-    // ====================================
+    // ======================================
 
     console.log(
       "Enviando QR al puente:",
@@ -766,22 +951,24 @@ function procesarQR() {
     );
 
 
-    iframePuente.contentWindow.postMessage(
+    iframePuente
+      .contentWindow
+      .postMessage(
 
-      {
-        tipo:
-          "CQR_REGISTRAR",
+        {
+          tipo:
+            "CQR_REGISTRAR",
 
-        codigoQR:
-          codigoQR
+          codigoQR:
+            codigoQR
+        },
 
-      },
+        "*"
 
-      "*"
-
-    );
+      );
 
   }
+
 
 
   // ========================================
@@ -796,9 +983,9 @@ function procesarQR() {
     respuestaPuente = null;
 
 
-    document.getElementById(
-      "resultado"
-    ).innerHTML =
+    document
+      .getElementById("resultado")
+      .innerHTML =
 
       "✅ <strong>Procesamiento terminado</strong><br><br>" +
 
@@ -826,122 +1013,68 @@ function procesarQR() {
       errores;
 
 
-    document.getElementById(
-      "btnIniciar"
-    ).disabled = false;
+    document
+      .getElementById("btnIniciar")
+      .disabled = false;
 
 
-    document.getElementById(
-      "btnDetener"
-    ).disabled = true;
+    document
+      .getElementById("btnDetener")
+      .disabled = true;
 
 
-    document.getElementById(
-      "btnProcesar"
-    ).disabled = false;
+    document
+      .getElementById("btnProcesar")
+      .disabled = false;
 
 
     console.log(
-      "=============================="
+      "PROCESAMIENTO TERMINADO"
     );
 
-
-   }
-  function siguiente() {
-
-    if (indice >= total) {
-      finalizar();
-      return;
-    }
-
-    const codigoQR = escaneados[indice];
-    const numero = indice + 1;
-
-    document.getElementById("resultado").innerHTML =
-      "⏳ <strong>Procesando...</strong><br>" +
-      numero + " de " + total + "<br>" + codigoQR;
-
-    console.log("Procesando QR:", codigoQR);
-
-   
-
-    // ======================================
-    // VERIFICAR PUENTE
-    // ======================================
-
-    if (
-      !iframePuente ||
-      !puenteListo
-    ) {
-
-      console.error(
-        "❌ Puente no está listo"
-      );
-
-      errores++;
-
-      indice++;
-
-      setTimeout(
-        siguiente,
-        500
-      );
-
-      return;
-    }
-
-
-    // ======================================
-    // ENVIAR QR AL PUENTE
-    // ======================================
 
     console.log(
-      "Enviando QR al puente:",
-      codigoQR
+      "Total:",
+      total
     );
 
 
-    iframePuente.contentWindow.postMessage(
-
-      {
-        tipo: "CQR_REGISTRAR",
-        codigoQR: codigoQR
-      },
-
-      "*"
-
+    console.log(
+      "Registrados:",
+      registrados
     );
+
+
+    console.log(
+      "Duplicados:",
+      duplicados
+    );
+
+
+    console.log(
+      "No registrados:",
+      noRegistrados
+    );
+
+
+    console.log(
+      "Errores:",
+      errores
+    );
+
   }
 
-  function finalizar() {
 
-    procesando = false;
-
-    document.getElementById("resultado").innerHTML =
-      "✅ <strong>Procesamiento terminado</strong><br><br>" +
-      "Total escaneados: " + total + "<br>" +
-      "🟢 Registrados: " + registrados + "<br>" +
-      "🟡 Duplicados: " + duplicados + "<br>" +
-      "🔴 No registrados: " + noRegistrados + "<br>" +
-      "❌ Errores: " + errores;
-
-    document.getElementById("btnIniciar").disabled = false;
-    document.getElementById("btnDetener").disabled = true;
-    document.getElementById("btnProcesar").disabled = false;
-
-    console.log("PROCESAMIENTO TERMINADO");
-    console.log("Total:", total);
-    console.log("Registrados:", registrados);
-    console.log("Duplicados:", duplicados);
-    console.log("No registrados:", noRegistrados);
-    console.log("Errores:", errores);
-  }
+  // ========================================
+  // INICIAR PROCESAMIENTO
+  // ========================================
 
   siguiente();
+
 }
 
 </script>
 
-
 </body>
+
 </html>
