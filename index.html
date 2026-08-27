@@ -906,67 +906,54 @@ function procesarQR() {
 
     console.log("Procesando QR:", codigoQR);
 
-    const url =
-      "https://script.google.com/macros/s/AKfycbwDeBjH6JUtDVm8QdtvwlucMVbD0C9YZ_oSxOadgnN4PspqklHQt4iD7R-KIidGquI3BQ/exec" +
-      "?action=registrarAsistencia" +
-      "&qr=" + encodeURIComponent(codigoQR) +
-      "&dispositivo=" + encodeURIComponent("CQR Scanner") +
-      "&callback=respuestaAsistencia" +
-      "&t=" + Date.now();
+   
 
-    console.log("URL JSONP:", url);
+    // ======================================
+    // VERIFICAR PUENTE
+    // ======================================
 
-    const script = document.createElement("script");
-    script.src = url;
-    script.async = true;
+    if (
+      !iframePuente ||
+      !puenteListo
+    ) {
 
-    let terminado = false;
-
-    const tiempoEspera = setTimeout(function() {
-
-      if (terminado) {
-        return;
-      }
-
-      terminado = true;
-
-      console.error("⏱️ Tiempo agotado:", codigoQR);
+      console.error(
+        "❌ Puente no está listo"
+      );
 
       errores++;
-      limpiar();
 
       indice++;
-      siguiente();
 
-    }, 15000);
+      setTimeout(
+        siguiente,
+        500
+      );
 
-    function limpiar() {
-
-      clearTimeout(tiempoEspera);
-
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      return;
     }
 
-    script.onerror = function(error) {
 
-      if (terminado) {
-        return;
-      }
+    // ======================================
+    // ENVIAR QR AL PUENTE
+    // ======================================
 
-      terminado = true;
+    console.log(
+      "Enviando QR al puente:",
+      codigoQR
+    );
 
-      console.error("❌ Error JSONP:", codigoQR, error);
 
-      errores++;
-      limpiar();
+    iframePuente.contentWindow.postMessage(
 
-      indice++;
-      siguiente();
-    };
+      {
+        tipo: "CQR_REGISTRAR",
+        codigoQR: codigoQR
+      },
 
-    document.body.appendChild(script);
+      "*"
+
+    );
   }
 
   function finalizar() {
