@@ -513,22 +513,15 @@ function leerQR(decodedText) {
   }
 
 
-  // ======================================
-  // EVITAR DUPLICADOS EN LA CAPTURA
-  // ======================================
+ // ======================================
+// EVITAR LECTURAS REPETIDAS
+// ======================================
 
-  if (
-    escaneados.includes(codigoQR)
-  ) {
+if (escaneados.includes(codigoQR)) {
 
-    console.log(
-      "QR ya capturado:",
-      codigoQR
-    );
+  return;
 
-    return;
-
-  }
+}
 
 
   escaneados.push(
