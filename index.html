@@ -37,7 +37,7 @@
 
     #reader {
       width: 100%;
-      margin-top: 20px;
+      margin-top: 20px;f
     }
 
     .contador {
@@ -402,55 +402,494 @@ function detenerCamara() {
 // PROCESAR TODOS LOS QR
 // ========================================
 
+
+// ========================================
+// PUENTE APPS SCRIPT
+// ========================================
+
+const URL_PUENTE =
+  "https://script.google.com/macros/s/AKfycbwDeBjH6JUtDVm8QdtvwlucMVbD0C9YZ_oSxOadgnN4PspqklHQt4iD7R-KIidGquI3BQ/exec?puente=1";
+
+let iframePuente = null;
+let puenteListo = false;
+let respuestaPuente = null;
+
+
+// ========================================
+// CREAR PUENTE
+// ========================================
+
+function iniciarPuente() {
+
+  if (iframePuente) {
+    return;
+  }
+
+
+  iframePuente =
+    document.createElement("iframe");
+
+
+  iframePuente.style.display = "none";
+
+  iframePuente.src =
+    URL_PUENTE;
+
+
+  document.body.appendChild(
+    iframePuente
+  );
+
+
+  console.log(
+    "PUENTE CQR INICIANDO..."
+  );
+}
+
+
+// ========================================
+// ESCUCHAR RESPUESTAS DEL PUENTE
+// ========================================
+
+window.addEventListener(
+  "message",
+  function(event) {
+
+    console.log(
+      "MENSAJE RECIBIDO DEL PUENTE:",
+      event.data
+    );
+
+
+    if (
+      !event.data ||
+      !event.data.tipo
+    ) {
+      return;
+    }
+
+
+    // ================================
+    // PUENTE LISTO
+    // ================================
+
+    if (
+      event.data.tipo ===
+      "CQR_PUENTE_LISTO"
+    ) {
+
+      puenteListo = true;
+
+      console.log(
+        "✅ PUENTE CQR LISTO"
+      );
+
+      return;
+    }
+
+
+    // ================================
+    // RESULTADO
+    // ================================
+
+    if (
+      event.data.tipo ===
+      "CQR_RESULTADO"
+    ) {
+
+      if (
+        typeof respuestaPuente ===
+        "function"
+      ) {
+
+        respuestaPuente(
+          event.data.resultado
+        );
+
+      }
+
+      return;
+    }
+
+
+    // ================================
+    // ERROR
+    // ================================
+
+    if (
+      event.data.tipo ===
+      "CQR_ERROR"
+    ) {
+
+      if (
+        typeof respuestaPuente ===
+        "function"
+      ) {
+
+        respuestaPuente({
+
+          ok: false,
+
+          duplicado: false,
+
+          noRegistrado: false,
+
+          error:
+            event.data.mensaje ||
+            "Error en Apps Script"
+
+        });
+
+      }
+
+    }
+
+  }
+);
+
+
+// ========================================
+// INICIAR PUENTE
+// ========================================
+
+iniciarPuente();
+  
 function procesarQR() {
 
   if (procesando) {
     return;
   }
 
+
   if (escaneados.length === 0) {
+
     document.getElementById("resultado").innerHTML =
       "⚠️ No hay códigos para procesar.";
+
     return;
   }
 
+
   procesando = true;
+
   detenerCamara();
 
-  const total = escaneados.length;
+
+  const total =
+    escaneados.length;
+
 
   let indice = 0;
+
   let registrados = 0;
+
   let duplicados = 0;
+
   let noRegistrados = 0;
+
   let errores = 0;
+
 
   document.getElementById("resultado").innerHTML =
     "⏳ <strong>Procesando...</strong><br>" +
-    "0 de " + total;
+    "0 de " +
+    total;
 
-  document.getElementById("btnIniciar").disabled = true;
-  document.getElementById("btnDetener").disabled = true;
-  document.getElementById("btnProcesar").disabled = true;
 
-  window.respuestaAsistencia = function(resultado) {
+  document.getElementById(
+    "btnIniciar"
+  ).disabled = true;
 
-    console.log("Respuesta Apps Script:", resultado);
 
-    if (resultado && resultado.ok === true) {
-      registrados++;
-    } else if (resultado && resultado.duplicado === true) {
-      duplicados++;
-    } else if (resultado && resultado.noRegistrado === true) {
-      noRegistrados++;
-    } else {
-      errores++;
+  document.getElementById(
+    "btnDetener"
+  ).disabled = true;
+
+
+  document.getElementById(
+    "btnProcesar"
+  ).disabled = true;
+
+
+  // ========================================
+  // ESPERAR RESPUESTA DEL PUENTE
+  // ========================================
+
+  respuestaPuente =
+    function(resultado) {
+
+      console.log(
+        "Respuesta Apps Script:",
+        resultado
+      );
+
+
+      // ====================================
+      // REGISTRADO
+      // ====================================
+
+      if (
+        resultado &&
+        resultado.ok === true
+      ) {
+
+        registrados++;
+
+      }
+
+
+      // ====================================
+      // DUPLICADO
+      // ====================================
+
+      else if (
+        resultado &&
+        resultado.duplicado === true
+      ) {
+
+        duplicados++;
+
+      }
+
+
+      // ====================================
+      // NO REGISTRADO
+      // ====================================
+
+      else if (
+        resultado &&
+        resultado.noRegistrado === true
+      ) {
+
+        noRegistrados++;
+
+      }
+
+
+      // ====================================
+      // ERROR
+      // ====================================
+
+      else {
+
+        errores++;
+
+      }
+
+
+      indice++;
+
+      siguiente();
+
+    };
+
+
+  // ========================================
+  // SIGUIENTE QR
+  // ========================================
+
+  function siguiente() {
+
+    if (
+      indice >= total
+    ) {
+
+      finalizar();
+
+      return;
     }
 
-    indice++;
-    siguiente();
-  };
 
+    const codigoQR =
+      escaneados[indice];
+
+
+    const numero =
+      indice + 1;
+
+
+    document.getElementById(
+      "resultado"
+    ).innerHTML =
+
+      "⏳ <strong>Procesando...</strong><br>" +
+
+      numero +
+      " de " +
+      total +
+
+      "<br>" +
+
+      codigoQR;
+
+
+    console.log(
+      "Procesando QR:",
+      codigoQR
+    );
+
+
+    // ====================================
+    // VERIFICAR PUENTE
+    // ====================================
+
+    if (
+      !iframePuente ||
+      !puenteListo
+    ) {
+
+      console.error(
+        "❌ Puente no está listo"
+      );
+
+
+      errores++;
+
+      indice++;
+
+      setTimeout(
+        siguiente,
+        500
+      );
+
+      return;
+    }
+
+
+    // ====================================
+    // ENVIAR QR AL PUENTE
+    // ====================================
+
+    console.log(
+      "Enviando QR al puente:",
+      codigoQR
+    );
+
+
+    iframePuente.contentWindow.postMessage(
+
+      {
+        tipo:
+          "CQR_REGISTRAR",
+
+        codigoQR:
+          codigoQR
+
+      },
+
+      "*"
+
+    );
+
+  }
+
+
+  // ========================================
+  // FINALIZAR
+  // ========================================
+
+  function finalizar() {
+
+    procesando = false;
+
+
+    respuestaPuente = null;
+
+
+    document.getElementById(
+      "resultado"
+    ).innerHTML =
+
+      "✅ <strong>Procesamiento terminado</strong><br><br>" +
+
+      "Total escaneados: " +
+      total +
+
+      "<br>" +
+
+      "🟢 Registrados: " +
+      registrados +
+
+      "<br>" +
+
+      "🟡 Duplicados: " +
+      duplicados +
+
+      "<br>" +
+
+      "🔴 No registrados: " +
+      noRegistrados +
+
+      "<br>" +
+
+      "❌ Errores: " +
+      errores;
+
+
+    document.getElementById(
+      "btnIniciar"
+    ).disabled = false;
+
+
+    document.getElementById(
+      "btnDetener"
+    ).disabled = true;
+
+
+    document.getElementById(
+      "btnProcesar"
+    ).disabled = false;
+
+
+    console.log(
+      "=============================="
+    );
+
+
+    console.log(
+      "PROCESAMIENTO TERMINADO"
+    );
+
+
+    console.log(
+      "Total:",
+      total
+    );
+
+
+    console.log(
+      "Registrados:",
+      registrados
+    );
+
+
+    console.log(
+      "Duplicados:",
+      duplicados
+    );
+
+
+    console.log(
+      "No registrados:",
+      noRegistrados
+    );
+
+
+    console.log(
+      "Errores:",
+      errores
+    );
+
+  }
+
+
+  // ========================================
+  // INICIAR
+  // ========================================
+
+  siguiente();
+
+}
   function siguiente() {
 
     if (indice >= total) {
