@@ -206,7 +206,114 @@
 const URL_APPS_SCRIPT =
   "https://script.google.com/macros/s/AKfycbzZ-GOf-VKFCyxplAvN8h9NsW16Qqrrd7YoDqb20r8xDXUYeZCXaNbEfsn9ieY3yYmtRw/exec";
 
+// ========================================
+// OBTENER EVENTO ACTUAL
+// ========================================
 
+function cargarEventoActual() {
+
+  const nombreCallback =
+    "respuestaEvento_" + Date.now();
+
+  window[nombreCallback] =
+    function(datos) {
+
+      console.log(
+        "RESPUESTA EVENTO:",
+        datos
+      );
+
+      if (
+        datos &&
+        datos.ok === true
+      ) {
+
+        document.getElementById("evento")
+          .textContent =
+          datos.evento || "Sin evento";
+
+        document.getElementById("fecha")
+          .textContent =
+          datos.fecha || "";
+
+      }
+
+      else {
+
+        document.getElementById("evento")
+          .textContent =
+          "Sin evento";
+
+        document.getElementById("fecha")
+          .textContent =
+          "";
+
+      }
+
+
+      if (
+        scriptEvento &&
+        scriptEvento.parentNode
+      ) {
+
+        scriptEvento.parentNode
+          .removeChild(scriptEvento);
+
+      }
+
+
+      delete window[nombreCallback];
+
+    };
+
+
+  const scriptEvento =
+    document.createElement("script");
+
+
+  scriptEvento.src =
+    URL_APPS_SCRIPT +
+    "?action=obtenerEventoActual" +
+    "&callback=" +
+    nombreCallback +
+    "&t=" +
+    Date.now();
+
+
+  scriptEvento.onerror =
+    function(error) {
+
+      console.error(
+        "❌ Error obteniendo evento:",
+        error
+      );
+
+
+      document.getElementById("evento")
+        .textContent =
+        "No se pudo obtener el evento";
+
+
+      if (
+        scriptEvento.parentNode
+      ) {
+
+        scriptEvento.parentNode
+          .removeChild(scriptEvento);
+
+      }
+
+
+      delete window[nombreCallback];
+
+    };
+
+
+  document.body.appendChild(
+    scriptEvento
+  );
+
+}
 let scanner = null;
 
 let escaneados = [];
